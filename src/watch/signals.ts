@@ -32,6 +32,14 @@ export interface Snapshot {
   pairToken?: string;
   pairSymbol?: string;
   pairDecimals?: number;
+  tokenDecimals?: number;
+  /** Uniswap v4 state, present after phase=2 graduation when readable. */
+  poolId?: string;
+  poolLiquidity?: bigint;
+  poolTick?: number;
+  poolPriceQuotePerToken?: number;
+  /** Pending hook fees denominated in the launch token, separate from quote-side feesPendingWei. */
+  poolPendingTokenFeesWei?: bigint;
   creatorTaxBps?: number;
   at: number;
 }

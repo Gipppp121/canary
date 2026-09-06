@@ -3,11 +3,12 @@
 import type { Reader, Position } from "../chain/reader.js";
 import type { Sink } from "../alert/sink.js";
 import { Store } from "./store.js";
-import { evaluate, type Alert, type Thresholds, DEFAULT_THRESHOLDS } from "./signals.js";
+import { evaluate, type Alert, type Snapshot, type Thresholds, DEFAULT_THRESHOLDS } from "./signals.js";
 
 export interface SweepResult {
   checked: number;
   alerts: Alert[];
+  snapshots: Snapshot[];
 }
 
 export async function sweep(
@@ -20,6 +21,7 @@ export async function sweep(
   tokens: string[] = []
 ): Promise<SweepResult> {
   const alerts: Alert[] = [];
+  const snapshots: Snapshot[] = [];
   let checked = 0;
   const positions = new Map<string, Position>();
 
@@ -45,9 +47,10 @@ export async function sweep(
       await sink.send(a);
     }
     store.put(after);
+    snapshots.push(after);
     checked++;
   }
 
   store.save();
-  return { checked, alerts };
+  return { checked, alerts, snapshots };
 }

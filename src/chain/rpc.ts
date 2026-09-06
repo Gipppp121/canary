@@ -7,7 +7,9 @@
 
 import {
   createPublicClient,
+  encodeAbiParameters,
   http,
+  keccak256,
   parseAbi,
   parseAbiItem,
   type Address,
@@ -20,6 +22,12 @@ import { ROBINHOOD_CHAIN_ID, DEFAULT_RPC_URL, DEFAULT_PONS_V2_FACTORY as FACTORY
 
 export { ROBINHOOD_CHAIN_ID, DEFAULT_RPC_URL } from "./config.js";
 export const DEFAULT_PONS_V2_FACTORY = FACTORY_DEFAULT as Address;
+
+// Pons V2 and canonical Uniswap v4 read-only contracts on Robinhood Chain.
+// These are public infrastructure addresses; Canary never creates a wallet client.
+export const PONS_V2_MEME_HOOK = "0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044" as Address;
+export const UNISWAP_V4_POOL_MANAGER = "0x8366a39cc670b4001a1121b8f6a443a643e40951" as Address;
+export const UNISWAP_V4_STATE_VIEW = "0xf3334192d15450cdd385c8b70e03f9a6bd9e673b" as Address;
 
 const robinhood = {
   id: ROBINHOOD_CHAIN_ID,
@@ -55,6 +63,20 @@ const tradeEvents = [
   parseAbiItem("event CurveSell(address indexed seller, address indexed recipient, uint256 tokensIn, uint256 quoteOut, uint256 fee, uint256 tax)"),
 ] as const;
 
+const stateViewAbi = parseAbi([
+  "function getSlot0(bytes32 poolId) view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee)",
+  "function getLiquidity(bytes32 poolId) view returns (uint128 liquidity)",
+]);
+
+const hookAbi = parseAbi([
+  "function pendingFees(bytes32 poolId, address currency) view returns (uint256)",
+  "function pendingCreatorTax(bytes32 poolId, address currency) view returns (uint256)",
+]);
+
+const poolSwapEvent = parseAbiItem(
+  "event Swap(bytes32 indexed id, address indexed sender, int128 amount0, int128 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick, uint24 fee)"
+);
+
 interface LaunchIndexEntry {
   token: Address;
   curve: Address;
@@ -76,6 +98,30 @@ export interface PonsV2ReaderOptions {
 
 function asAddress(v: string): Address {
   return v as Address;
+}
+
+function poolIdentity(token: Address, pairToken: Address, poolFee: number, tickSpacing: number) {
+  const [currency0, currency1] = pairToken.toLowerCase() < token.toLowerCase()
+    ? [pairToken, token]
+    : [token, pairToken];
+  const poolId = keccak256(encodeAbiParameters(
+    [
+      { type: "address" }, { type: "address" },
+      { type: "uint24" }, { type: "int24" }, { type: "address" },
+    ],
+    [currency0, currency1, poolFee, tickSpacing, PONS_V2_MEME_HOOK],
+  ));
+  return { poolId, currency0, currency1, tokenIsCurrency0: currency0.toLowerCase() === token.toLowerCase() };
+}
+
+function humanQuotePerToken(tick: number, tokenIsCurrency0: boolean, tokenDecimals: number, pairDecimals: number): number | undefined {
+  // Uniswap tick is log_1.0001(currency1Raw/currency0Raw). Correct for decimals
+  // and invert when the launch token occupies currency1. This is display-only.
+  const raw1Per0 = Math.pow(1.0001, tick);
+  if (!Number.isFinite(raw1Per0) || raw1Per0 <= 0) return undefined;
+  const rawQuotePerToken = tokenIsCurrency0 ? raw1Per0 : 1 / raw1Per0;
+  const human = rawQuotePerToken * Math.pow(10, tokenDecimals - pairDecimals);
+  return Number.isFinite(human) && human > 0 ? human : undefined;
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -207,7 +253,8 @@ export class PonsV2Reader implements Reader {
   }
 
   private async launchFor(token: Address): Promise<LaunchIndexEntry> {
-    await this.refreshIndex();
+    // Direct --token watches should start immediately. Building the full launch
+    // index can require many eth_getLogs calls, so never block a pinned token on it.
     const cached = this.index.get(token.toLowerCase());
     if (cached) return cached;
 
@@ -282,6 +329,27 @@ export class PonsV2Reader implements Reader {
     }
   }
 
+  private async recentPoolTrades(poolId: `0x${string}`): Promise<{ count: number; lastTradeAt: number }> {
+    const latest = await this.client.getBlockNumber();
+    const from = latest > this.tradeLookbackBlocks ? latest - this.tradeLookbackBlocks : 0n;
+    try {
+      const logs = await this.client.getLogs({
+        address: UNISWAP_V4_POOL_MANAGER,
+        event: poolSwapEvent,
+        args: { id: poolId },
+        fromBlock: from,
+        toBlock: latest,
+      });
+      if (!logs.length) return { count: 0, lastTradeAt: 0 };
+      const last = logs[logs.length - 1]!;
+      if (last.blockNumber === null) return { count: logs.length, lastTradeAt: 0 };
+      const b = await this.client.getBlock({ blockNumber: last.blockNumber });
+      return { count: logs.length, lastTradeAt: Number(b.timestamp) * 1000 };
+    } catch {
+      return { count: 0, lastTradeAt: 0 };
+    }
+  }
+
   async snapshot(tokenRaw: string): Promise<Snapshot> {
     const token = asAddress(tokenRaw);
     const indexed = await this.launchFor(token);
@@ -293,14 +361,21 @@ export class PonsV2Reader implements Reader {
     });
     if (!launch.exists) throw new Error(`${token} is not a Pons V2 launch in the configured factory`);
 
-    const [symbol, totalSupply, devBalance] = await Promise.all([
+    const [symbol, totalSupply, devBalance, tokenDecimalsRaw] = await Promise.all([
       this.client.readContract({ address: token, abi: tokenAbi, functionName: "symbol" }).catch(() => "TOKEN"),
       this.client.readContract({ address: token, abi: tokenAbi, functionName: "totalSupply" }),
       this.client.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [launch.deployer] }),
+      this.client.readContract({ address: token, abi: tokenAbi, functionName: "decimals" }).catch(() => 18),
     ]);
+    const tokenDecimals = Number(tokenDecimalsRaw);
 
     let reserve = 0n;
     let feesPending = 0n;
+    let poolId: `0x${string}` | undefined;
+    let poolLiquidity: bigint | undefined;
+    let poolTick: number | undefined;
+    let poolPriceQuotePerToken: number | undefined;
+    let poolPendingTokenFeesWei: bigint | undefined;
     if (launch.phase === 0) {
       const vals = await Promise.allSettled([
         this.client.readContract({ address: launch.curve, abi: curveAbi, functionName: "realQuoteReserve" }),
@@ -313,7 +388,7 @@ export class PonsV2Reader implements Reader {
       feesPending = q + tax;
     }
 
-    const trades = launch.phase === 0
+    let trades = launch.phase === 0
       ? await this.recentTrades(launch.curve, indexed.launchBlock)
       : { count: 0, lastTradeAt: 0 };
 
@@ -327,6 +402,34 @@ export class PonsV2Reader implements Reader {
       ]);
       if (pairMeta[0].status === "fulfilled") pairSymbol = pairMeta[0].value;
       if (pairMeta[1].status === "fulfilled") pairDecimals = Number(pairMeta[1].value);
+    }
+
+    // Graduated launches trade on Uniswap v4. Reconstruct the Pons pool from the
+    // launch record, then read canonical StateView + PoolManager + Pons hook data.
+    if (launch.phase === 2) {
+      const identity = poolIdentity(token, launch.pairToken, Number(launch.poolFee), Number(launch.tickSpacing));
+      poolId = identity.poolId;
+      const poolReads = await Promise.allSettled([
+        this.client.readContract({ address: UNISWAP_V4_STATE_VIEW, abi: stateViewAbi, functionName: "getSlot0", args: [poolId] }),
+        this.client.readContract({ address: UNISWAP_V4_STATE_VIEW, abi: stateViewAbi, functionName: "getLiquidity", args: [poolId] }),
+        this.client.readContract({ address: PONS_V2_MEME_HOOK, abi: hookAbi, functionName: "pendingFees", args: [poolId, launch.pairToken] }),
+        this.client.readContract({ address: PONS_V2_MEME_HOOK, abi: hookAbi, functionName: "pendingCreatorTax", args: [poolId, launch.pairToken] }),
+        this.client.readContract({ address: PONS_V2_MEME_HOOK, abi: hookAbi, functionName: "pendingFees", args: [poolId, token] }),
+        this.client.readContract({ address: PONS_V2_MEME_HOOK, abi: hookAbi, functionName: "pendingCreatorTax", args: [poolId, token] }),
+      ]);
+      if (poolReads[0].status === "fulfilled") {
+        const slot0 = poolReads[0].value;
+        poolTick = Number(slot0[1]);
+        poolPriceQuotePerToken = humanQuotePerToken(poolTick, identity.tokenIsCurrency0, tokenDecimals, pairDecimals);
+      }
+      if (poolReads[1].status === "fulfilled") poolLiquidity = poolReads[1].value;
+      const pendingQuoteFee = poolReads[2].status === "fulfilled" ? poolReads[2].value : 0n;
+      const pendingQuoteTax = poolReads[3].status === "fulfilled" ? poolReads[3].value : 0n;
+      const pendingTokenFee = poolReads[4].status === "fulfilled" ? poolReads[4].value : 0n;
+      const pendingTokenTax = poolReads[5].status === "fulfilled" ? poolReads[5].value : 0n;
+      feesPending = pendingQuoteFee + pendingQuoteTax;
+      poolPendingTokenFeesWei = pendingTokenFee + pendingTokenTax;
+      trades = await this.recentPoolTrades(poolId);
     }
 
     await this.refreshIndex();
@@ -354,6 +457,12 @@ export class PonsV2Reader implements Reader {
       pairToken: launch.pairToken,
       pairSymbol,
       pairDecimals,
+      tokenDecimals,
+      poolId,
+      poolLiquidity,
+      poolTick,
+      poolPriceQuotePerToken,
+      poolPendingTokenFeesWei,
       creatorTaxBps: Number(launch.creatorTaxBps),
       at: Date.now(),
     };

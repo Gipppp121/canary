@@ -26,6 +26,7 @@ Canary now has a real Robinhood Chain reader instead of demo-only plumbing.
 - reads the Pons V2 launch record, curve phase, deployer, pair asset and creator tax
 - reads deployer token balance as a share of supply
 - reads `realQuoteReserve`, pending curve fees and recent curve trades while phase = `curve`
+- reconstructs graduated Pons V2 pool ids and reads Uniswap v4 price/tick, active liquidity, recent swaps and pending hook fees while phase = `pool`
 - persists snapshots across restarts
 - deduplicates repeated alerts
 - optionally mirrors the same alerts to Telegram
@@ -43,6 +44,15 @@ npm install
 
 # offline demo first
 npm run canary -- watch --demo
+
+# cinematic live board demo — 6 fixtures, refreshes every 2s until Ctrl+C
+npm run canary -- watch --demo --board
+
+# live board for one public Pons V2 token (Pons Charity / CHARITY)
+npm run canary -- watch --token 0x030FA758daD53f0D6e23cfD3a8Fe7bC7B54E5Ac9 --board --interval 10
+
+# wallet discovery (replace with any public Robinhood Chain wallet)
+npm run canary -- watch 0xYOUR_WALLET --board --interval 10
 
 # touch the real chain and verify the configured Pons V2 factory
 npm run canary -- doctor --probe
@@ -100,9 +110,9 @@ token.balanceOf(deployer)
 token.totalSupply()
 ```
 
-When the launch leaves phase `0`, curve-reserve, curve-volume and curve-fee rules stop. The phase change still appears, and deployer balance + deployer history can keep being tracked.
+After phase `2` (pool created), Canary reconstructs the Pons Uniswap v4 pool key from the launch record and reads the canonical Robinhood Chain `StateView`, `PoolManager`, and Pons meme hook. The terminal can then show current tick/price, active v4 liquidity, recent swaps, last swap time, and unswept hook fees in both the quote asset and launch token.
 
-That boundary prevents graduation itself from looking like a fake liquidity collapse.
+Curve-reserve rules still stop after phase `0`: v4 active liquidity is not mislabeled as a quote reserve, and graduation itself cannot look like a fake liquidity collapse.
 
 ---
 
@@ -255,6 +265,15 @@ npm test
 npm run typecheck
 npm run build
 npm run canary -- watch --demo
+
+# cinematic live board demo — 6 fixtures, refreshes every 2s until Ctrl+C
+npm run canary -- watch --demo --board
+
+# live board for one public Pons V2 token (Pons Charity / CHARITY)
+npm run canary -- watch --token 0x030FA758daD53f0D6e23cfD3a8Fe7bC7B54E5Ac9 --board --interval 10
+
+# wallet discovery (replace with any public Robinhood Chain wallet)
+npm run canary -- watch 0xYOUR_WALLET --board --interval 10
 ```
 
 CI runs on Node 20 and 22, builds the package, runs the deterministic suite, smoke-tests the compiled CLI, and fails if signing/write primitives appear in `src/`.

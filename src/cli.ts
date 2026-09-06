@@ -10,6 +10,7 @@ import { TerminalSink, TelegramSink, Deduped } from "./alert/sink.js";
 import { FixtureReader } from "./chain/reader.js";
 import { PonsV2Reader, ROBINHOOD_CHAIN_ID } from "./chain/rpc.js";
 import { bar, short, ago, units } from "./util/fmt.js";
+import { renderBoard } from "./ui/board.js";
 
 const VERSION = "0.2.0";
 const PHASE = ["curve", "swept", "pool", "rescued"];
@@ -38,21 +39,41 @@ function demoReader(): FixtureReader {
     at: now,
     ...over,
   });
-  const good = base({ token: "0xaaa1", symbol: "STEADY" });
-  const bad = base({
-    token: "0xbbb2",
-    symbol: "NIGHTS",
-    devHoldPct: 18,
-    deployerLaunches: 297,
-    deployerGraduated: 0,
-  });
-  return new FixtureReader(
-    { "0xaaa1": good, "0xbbb2": bad },
-    { "0xdemo": [
-      { token: "0xaaa1", symbol: "STEADY", balance: 1n },
-      { token: "0xbbb2", symbol: "NIGHTS", balance: 1n },
-    ] }
-  );
+
+  const fixtures: Record<string, Snapshot> = {
+    "0xaaa1": base({ token: "0xaaa1", symbol: "STEADY", devHoldPct: 3, trades: 61, deployerLaunches: 2 }),
+    "0xbbb2": base({ token: "0xbbb2", symbol: "NIGHTS", devHoldPct: 18, deployerLaunches: 27, deployerGraduated: 2 }),
+    "0xccc3": base({ token: "0xccc3", symbol: "LANTERN", devHoldPct: 7.5, trades: 88, deployerLaunches: 4 }),
+    "0xddd4": base({ token: "0xddd4", symbol: "ORBIT", devHoldPct: 11.2, trades: 132, deployerLaunches: 7 }),
+    "0xeee5": base({ token: "0xeee5", symbol: "WIRE", devHoldPct: 4.6, trades: 23, deployerLaunches: 3 }),
+    "0xfff6": base({ token: "0xfff6", symbol: "RAVEN", devHoldPct: 13.4, trades: 74, deployerLaunches: 9 }),
+  };
+  const held = Object.values(fixtures).map((x) => ({ token: x.token, symbol: x.symbol, balance: 1n }));
+  return new FixtureReader(fixtures, { "0xdemo": held });
+}
+
+function advanceDemo(reader: FixtureReader, tick: number): void {
+  const now = Date.now();
+  // Deterministic movement: the board changes on every pass but remains reproducible.
+  reader.advance("0xaaa1", { trades: 61 + tick, lastTradeAt: now });
+  reader.advance("0xccc3", { trades: 88 + tick * 2, lastTradeAt: now - (tick % 3) * 7_000 });
+  reader.advance("0xddd4", { trades: 132 + tick, feesPendingWei: 300_000_000_000_000_000n + BigInt(tick) * 8_000_000_000_000_000n, lastTradeAt: now });
+  reader.advance("0xeee5", { trades: 23 + Math.floor(tick / 2), lastTradeAt: now - 12_000 });
+  reader.advance("0xfff6", { devHoldPct: Math.max(7.2, 13.4 - tick * 0.15), trades: 74 + tick, lastTradeAt: now });
+
+  // Every few passes NIGHTS crosses a real rule, then recovers for the next cycle.
+  const phase = tick % 8;
+  if (phase === 0) {
+    reader.advance("0xbbb2", { devHoldPct: 18, liquidityWei: 4_200_000_000_000_000_000n, feesPendingWei: 300_000_000_000_000_000n, trades: 40 + tick, lastTradeAt: now });
+  } else if (phase === 2) {
+    reader.advance("0xbbb2", { devHoldPct: 14.8, trades: 42 + tick, lastTradeAt: now });
+  } else if (phase === 4) {
+    reader.advance("0xbbb2", { liquidityWei: 3_100_000_000_000_000_000n, trades: 44 + tick, lastTradeAt: now });
+  } else if (phase === 6) {
+    reader.advance("0xbbb2", { feesPendingWei: 90_000_000_000_000_000n, trades: 46 + tick, lastTradeAt: now });
+  } else {
+    reader.advance("0xbbb2", { trades: 40 + tick, lastTradeAt: now });
+  }
 }
 
 function liveReader() {
@@ -79,6 +100,15 @@ function printSnapshot(s: Snapshot): void {
     console.log(`recent trades ${s.trades}`);
     console.log(`last trade    ${s.lastTradeAt ? `${ago(Date.now() - s.lastTradeAt)} ago` : "unknown / RPC did not return logs"}`);
     console.log(`pending fees  ${s.feesPendingWei.toString()} raw quote units`);
+  } else if (s.phase === 2) {
+    console.log(`pool id       ${s.poolId ?? "unknown"}`);
+    console.log(`v4 liquidity  ${s.poolLiquidity?.toString() ?? "unknown"}`);
+    console.log(`pool tick     ${s.poolTick ?? "unknown"}`);
+    console.log(`pool price    ${s.poolPriceQuotePerToken ?? "unknown"} ${s.pairSymbol ?? "quote"}/token`);
+    console.log(`recent swaps  ${s.trades}`);
+    console.log(`last swap     ${s.lastTradeAt ? `${ago(Date.now() - s.lastTradeAt)} ago` : "unknown / RPC did not return logs"}`);
+    console.log(`quote fees    ${s.feesPendingWei.toString()} raw quote units`);
+    console.log(`token fees    ${s.poolPendingTokenFeesWei?.toString() ?? "unknown"} raw token units`);
   }
   console.log(`dev launches  ${s.deployerLaunches} in indexed window`);
   if (s.creatorTaxBps !== undefined) console.log(`creator tax   ${(s.creatorTaxBps / 100).toFixed(2)}%`);
@@ -164,11 +194,15 @@ program
   .option("--once", "sweep once and exit")
   .option("--demo", "fixtures only, no network")
   .option("--token <addresses...>", "watch token addresses directly, even if wallet discovery misses them")
-  .action(async (wallets: string[], opts: { once?: boolean; demo?: boolean; token?: string[] }) => {
+  .option("--board", "redraw a live terminal board instead of line-by-line output")
+  .option("--interval <seconds>", "override poll interval (minimum 1s)")
+  .action(async (wallets: string[], opts: { once?: boolean; demo?: boolean; token?: string[]; board?: boolean; interval?: string }) => {
     banner();
     const cfg = loadConfig();
     const list = wallets.length ? wallets : cfg.wallets;
     const direct = [...(cfg.tokens ?? []), ...(opts.token ?? [])];
+    const requestedInterval = opts.interval === undefined ? undefined : Number.parseInt(opts.interval, 10);
+    const pollSeconds = Number.isFinite(requestedInterval) ? Math.max(1, requestedInterval as number) : (opts.demo && opts.board ? 2 : cfg.pollSeconds);
 
     if (!opts.demo && list.length === 0 && direct.length === 0) {
       console.error("nothing to watch. pass a wallet, use --token, or set WALLETS/TOKENS in .env");
@@ -186,7 +220,7 @@ program
 
     const reader = opts.demo ? demoReader() : liveReader();
     const store = new Store();
-    const sinks = [new TerminalSink()];
+    const sinks = opts.board ? [] : [new TerminalSink()];
     if (cfg.telegramToken) sinks.push(new TelegramSink(cfg.telegramToken, cfg.telegramChatId));
     const sink = new Deduped(sinks);
     const watched = opts.demo ? ["0xdemo"] : list;
@@ -199,26 +233,43 @@ program
         volumeDeadMinutes: cfg.volumeDeadMinutes,
         serialDeployerCount: cfg.serialDeployerCount,
       }, Date.now(), opts.demo ? [] : direct);
-      const quiet = res.alerts.length === 0 ? "  \x1b[2mquiet\x1b[0m" : "";
-      console.log(`\x1b[2m${new Date().toISOString().slice(11, 19)}  swept ${res.checked} position(s) in ${ago(Date.now() - t0)}\x1b[0m${quiet}`);
+      if (opts.board) {
+        renderBoard(res.snapshots, res.alerts, {
+          elapsedMs: Date.now() - t0,
+          checked: res.checked,
+          pollSeconds,
+          demo: opts.demo,
+          rpcLabel: cfg.rpcUrl.replace(/^https?:\/\//, "").split("/")[0],
+        });
+      } else {
+        const quiet = res.alerts.length === 0 ? "  \x1b[2mquiet\x1b[0m" : "";
+        console.log(`\x1b[2m${new Date().toISOString().slice(11, 19)}  swept ${res.checked} position(s) in ${ago(Date.now() - t0)}\x1b[0m${quiet}`);
+      }
     };
 
     await run();
-    if (opts.demo && reader instanceof FixtureReader) {
+    if (opts.once) return;
+
+    // Plain demo keeps the old two-pass behavior. Board demo becomes a live loop for filming.
+    if (opts.demo && reader instanceof FixtureReader && !opts.board) {
       reader.advance("0xbbb2", { devHoldPct: 9, liquidityWei: 2_900_000_000_000_000_000n });
       console.log("\x1b[2m…time passes…\x1b[0m\n");
       await run();
+      return;
     }
-    if (opts.once || opts.demo) return;
 
     let running = false;
+    let demoTick = 0;
     setInterval(async () => {
       if (running) return;
       running = true;
-      try { await run(); }
+      try {
+        if (opts.demo && reader instanceof FixtureReader) advanceDemo(reader, ++demoTick);
+        await run();
+      }
       catch (e) { console.error(`sweep failed: ${e instanceof Error ? e.message : String(e)}`); }
       finally { running = false; }
-    }, cfg.pollSeconds * 1000);
+    }, pollSeconds * 1000);
   });
 
 program
