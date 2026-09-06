@@ -27,6 +27,7 @@
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "canary": "tsx src/cli.ts",
+    "board": "tsx src/ui/web-board.ts",
     "prepare": "npm run build",
     "prepack": "npm run build"
   },
