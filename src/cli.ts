@@ -204,7 +204,7 @@ program
     };
 
     await run();
-    if (opts.demo) {
+    if (opts.demo && reader instanceof FixtureReader) {
       reader.advance("0xbbb2", { devHoldPct: 9, liquidityWei: 2_900_000_000_000_000_000n });
       console.log("\x1b[2m…time passes…\x1b[0m\n");
       await run();

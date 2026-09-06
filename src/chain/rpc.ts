@@ -237,7 +237,7 @@ export class PonsV2Reader implements Reader {
     for (const token of this.pinnedTokens) candidates.set(token.toLowerCase(), token);
 
     const tokens = [...candidates.values()];
-    const balances = await mapLimit(tokens, 8, async (token) => {
+    const balances = await mapLimit<Address, Position | null>(tokens, 8, async (token) => {
       try {
         const balance = await this.client.readContract({
           address: token,
@@ -252,7 +252,7 @@ export class PonsV2Reader implements Reader {
         } catch {
           // A broken symbol() should not hide a real balance.
         }
-        return { token, symbol, balance } satisfies Position;
+        return { token, symbol, balance };
       } catch {
         return null;
       }

@@ -1,0 +1,35 @@
+diff --git a/src/chain/rpc.ts b/src/chain/rpc.ts
+index c1efe82..de311eb 100644
+--- a/src/chain/rpc.ts
++++ b/src/chain/rpc.ts
+@@ -237,7 +237,7 @@ export class PonsV2Reader implements Reader {
+     for (const token of this.pinnedTokens) candidates.set(token.toLowerCase(), token);
+ 
+     const tokens = [...candidates.values()];
+-    const balances = await mapLimit(tokens, 8, async (token) => {
++    const balances = await mapLimit<Address, Position | null>(tokens, 8, async (token) => {
+       try {
+         const balance = await this.client.readContract({
+           address: token,
+@@ -252,7 +252,7 @@ export class PonsV2Reader implements Reader {
+         } catch {
+           // A broken symbol() should not hide a real balance.
+         }
+-        return { token, symbol, balance } satisfies Position;
++        return { token, symbol, balance };
+       } catch {
+         return null;
+       }
+diff --git a/src/cli.ts b/src/cli.ts
+index c4f9eaf..f3530c5 100644
+--- a/src/cli.ts
++++ b/src/cli.ts
+@@ -204,7 +204,7 @@ program
+     };
+ 
+     await run();
+-    if (opts.demo) {
++    if (opts.demo && reader instanceof FixtureReader) {
+       reader.advance("0xbbb2", { devHoldPct: 9, liquidityWei: 2_900_000_000_000_000_000n });
+       console.log("\x1b[2m…time passes…\x1b[0m\n");
+       await run();
