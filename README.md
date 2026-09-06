@@ -13,6 +13,65 @@ Most chain tools help you enter. Canary is for after the buy: watch the token, c
 
 It has no wallet client, no account import, no transaction writer, and no place to put a private key.
 
+> **No key. No signer. No transaction path.** Canary only reads, compares, and explains what changed.
+
+---
+
+## Live board
+
+This is a real read against Robinhood Chain, not fixture output. The token below is already in the Pons V2 pool phase, so Canary switches from curve metrics to Uniswap v4 pool metrics automatically.
+
+![Canary live Robinhood Chain board](assets/board-live.png)
+
+```bash
+# safest first look
+npm run canary -- watch --demo --board
+
+# one exact Pons V2 token, live
+npm run canary -- watch --token 0xTOKEN --board --interval 10
+
+# recent Pons V2 positions held by a wallet
+npm run canary -- watch 0xWALLET --board --interval 10
+```
+
+`QUIET` means no deterministic threshold crossed. `WATCH` means inspect. `LEAVE` is the highest-severity local signal. None of them is a trade instruction.
+
+Full field reference: [`docs/BOARD.md`](docs/BOARD.md).
+
+---
+
+## What Canary replaces
+
+| The problem | What Canary does | Command |
+|---|---|---|
+| following one launch by hand | keeps a snapshot on disk and compares every new sweep | `watch --board` |
+| checking one token quickly | reads one Pons V2 launch directly without mutating anything | `scan` |
+| deployer balance changed | reports the measured balance delta without claiming intent | `watch` |
+| curve liquidity moved | compares `realQuoteReserve` only while the token is actually on the curve | `watch` |
+| token graduated | switches to Uniswap v4 price, tick, active liquidity, swaps and hook fees | `watch --token ... --board` |
+| config might be wrong | verifies RPC, chain id and Pons V2 factory on-chain | `doctor --probe` |
+| repeated noise | persists snapshots and deduplicates alerts inside the configured window | automatic |
+
+---
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[wallet or token pin] --> B[Pons V2 launch reader]
+    B --> C{phase}
+    C -->|curve| D[curve reserve + fees + trades]
+    C -->|pool| E[v4 price + liquidity + swaps + hook fees]
+    D --> F[current snapshot]
+    E --> F
+    F --> G[previous snapshot on disk]
+    G --> H[deterministic rules]
+    H --> I[terminal board]
+    H --> J[optional Telegram]
+```
+
+The model is not in the alert path. The same reads produce the same rule result.
+
 ---
 
 ## What works in v0.2
@@ -35,7 +94,7 @@ No model is in the alert path. Every rule is a plain function in `src/watch/sign
 
 ---
 
-## Start with one token
+## Quick start
 
 ```bash
 git clone https://github.com/Gipppp121/canary.git
@@ -45,14 +104,10 @@ npm install
 # offline demo first
 npm run canary -- watch --demo
 
-# cinematic live board demo — 6 fixtures, refreshes every 2s until Ctrl+C
-npm run canary -- watch --demo --board
-
-# live board for one public Pons V2 token (Pons Charity / CHARITY)
-npm run canary -- watch --token 0x030FA758daD53f0D6e23cfD3a8Fe7bC7B54E5Ac9 --board --interval 10
-
-# wallet discovery (replace with any public Robinhood Chain wallet)
+# live terminal board
 npm run canary -- watch 0xYOUR_WALLET --board --interval 10
+# or pin a token directly
+npm run canary -- watch --token 0xTOKEN --board --interval 10
 
 # touch the real chain and verify the configured Pons V2 factory
 npm run canary -- doctor --probe
@@ -249,7 +304,7 @@ Full notes: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 - it does not buy, sell, approve, claim, sign or submit transactions
 - it is not a rug detector and does not infer intent
-- it does not reconstruct all Uniswap v4 post-graduation swap activity yet
+- pool swap history is intentionally bounded to a recent block window; Canary does not claim lifetime v4 volume
 - wallet auto-discovery is intentionally bounded on public RPC; pin old tokens explicitly
 - public RPC rate limits can make log data unavailable; unknown data stays unknown
 - an alert is evidence to inspect, not a trading instruction
@@ -266,14 +321,10 @@ npm run typecheck
 npm run build
 npm run canary -- watch --demo
 
-# cinematic live board demo — 6 fixtures, refreshes every 2s until Ctrl+C
-npm run canary -- watch --demo --board
-
-# live board for one public Pons V2 token (Pons Charity / CHARITY)
-npm run canary -- watch --token 0x030FA758daD53f0D6e23cfD3a8Fe7bC7B54E5Ac9 --board --interval 10
-
-# wallet discovery (replace with any public Robinhood Chain wallet)
+# live terminal board
 npm run canary -- watch 0xYOUR_WALLET --board --interval 10
+# or pin a token directly
+npm run canary -- watch --token 0xTOKEN --board --interval 10
 ```
 
 CI runs on Node 20 and 22, builds the package, runs the deterministic suite, smoke-tests the compiled CLI, and fails if signing/write primitives appear in `src/`.
