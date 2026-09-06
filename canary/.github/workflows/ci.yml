@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Compiled CLI demo
+        run: node bin/canary.js watch --demo
+      - name: Rules are printable
+        run: node bin/canary.js rules
+      - name: Package contains the compiled CLI
+        run: npm pack --dry-run
+      - name: Signing material is refused
+        run: |
+          if PRIVATE_KEY=0xdead node bin/canary.js doctor; then
+            echo "doctor accepted signing material"
+            exit 1
+          fi
+          echo "signing material correctly refused"
+
+  no-signing-code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No signer or write path in src
+        run: |
+          set -e
+          if grep -rniE "privateKeyToAccount|mnemonicToAccount|createWalletClient|writeContract|sendTransaction|signTransaction|signMessage|wallet_sendTransaction|eth_sendRawTransaction" src/; then
+            echo "found a signing/write primitive in src/. canary is read-only by design."
+            exit 1
+          fi
+          echo "no signing/write primitive found"

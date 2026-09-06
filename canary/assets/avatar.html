@@ -1,0 +1,63 @@
+<meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:440px;height:440px;background:#0a0d0b;display:flex;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;
+  font-family:ui-monospace,'DejaVu Sans Mono',monospace}
+.grid{position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,#ffffff07 0 1px,transparent 1px 40px),
+             repeating-linear-gradient(0deg,#ffffff06 0 1px,transparent 1px 40px)}
+.beam{position:absolute;left:110px;top:-60px;width:230px;height:560px;
+  background:linear-gradient(#ffd93b30,transparent 70%);
+  clip-path:polygon(42% 0,58% 0,100% 100%,0 100%)}
+.cage{position:relative;width:250px;height:296px;z-index:2}
+.ring{position:absolute;left:107px;top:-4px;width:32px;height:18px;border:6px solid #3a4038;
+  border-radius:50%;border-bottom-color:transparent}
+.hook{position:absolute;left:119px;top:8px;width:7px;height:32px;background:#3a4038}
+.top{position:absolute;left:28px;top:38px;width:190px;height:19px;
+  background:linear-gradient(#5a6357,#333a31);border-radius:10px 10px 0 0;border:4px solid #10140f}
+.bar{position:absolute;top:55px;width:6px;height:186px;background:#4a5346;box-shadow:0 0 0 1px #10140f}
+.base{position:absolute;left:22px;top:238px;width:202px;height:24px;
+  background:linear-gradient(#5a6357,#2b3129);border-radius:0 0 12px 12px;border:4px solid #10140f}
+.floorbar{position:absolute;left:36px;top:231px;width:174px;height:6px;background:#3a4038}
+.glow{position:absolute;left:20px;top:44px;width:206px;height:224px;
+  background:radial-gradient(ellipse,#ffd93b26,transparent 66%)}
+.perch{position:absolute;left:44px;top:206px;width:118px;height:7px;background:#3a4038;border-radius:4px}
+.bird{position:absolute;left:74px;top:112px;width:94px;height:90px;z-index:3}
+.body{position:absolute;left:6px;top:20px;width:68px;height:54px;border-radius:28px 32px 22px 24px;
+  background:#ffd93b;box-shadow:inset 0 -9px 0 #d9a821, inset 0 8px 0 #ffe98a, 0 0 34px #ffd93b66}
+.head{position:absolute;left:46px;top:0;width:44px;height:39px;border-radius:20px;
+  background:#ffe14f;box-shadow:inset 0 -5px 0 #d9a821}
+.tuft{position:absolute;left:63px;top:-9px;width:6px;height:13px;background:#ffe14f;border-radius:3px;
+  transform:rotate(-16deg)}
+.tuft.b{left:72px;transform:rotate(10deg);height:11px}
+.eye{position:absolute;left:73px;top:13px;width:9px;height:9px;border-radius:50%;background:#171a15}
+.eye:after{content:"";position:absolute;left:2px;top:1px;width:3px;height:3px;background:#fff;border-radius:50%}
+.beak{position:absolute;left:88px;top:19px;width:0;height:0;
+  border-left:15px solid #ff8a2b;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.wing{position:absolute;left:18px;top:34px;width:38px;height:25px;border-radius:18px 8px 18px 10px;
+  background:#f4c62c;box-shadow:inset 0 -4px 0 #cf9c1d}
+.tail{position:absolute;left:-6px;top:30px;width:25px;height:15px;background:#f4c62c;
+  border-radius:8px 0 0 8px;transform:rotate(-12deg)}
+.leg{position:absolute;top:71px;width:4px;height:15px;background:#ff8a2b}
+.foot{position:absolute;top:85px;width:14px;height:4px;background:#ff8a2b}
+.vig{position:absolute;inset:0;z-index:6;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 46%,transparent 50%,#000000b0 100%)}
+</style>
+<div class="grid"></div><div class="beam"></div>
+<div class="cage">
+  <div class="ring"></div><div class="hook"></div><div class="glow"></div>
+  <div class="top"></div>
+  <div class="bar" style="left:38px"></div><div class="bar" style="left:72px"></div>
+  <div class="bar" style="left:106px"></div><div class="bar" style="left:140px"></div>
+  <div class="bar" style="left:174px"></div><div class="bar" style="left:206px"></div>
+  <div class="bird">
+    <div class="tail"></div><div class="body"></div><div class="wing"></div>
+    <div class="tuft"></div><div class="tuft b"></div>
+    <div class="head"></div><div class="eye"></div><div class="beak"></div>
+    <div class="leg" style="left:28px"></div><div class="leg" style="left:44px"></div>
+    <div class="foot" style="left:23px"></div><div class="foot" style="left:39px"></div>
+  </div>
+  <div class="perch"></div><div class="floorbar"></div><div class="base"></div>
+</div>
+<div class="vig"></div>
