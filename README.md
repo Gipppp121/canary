@@ -1,5 +1,4 @@
-﻿# canary
-
+# Canary v0.3
 ![canary](assets/banner.png)
 
 ![node](https://img.shields.io/badge/node-%E2%89%A520-9AA694?style=flat-square&labelColor=0A0D0B)
@@ -8,6 +7,8 @@
 ![license](https://img.shields.io/badge/license-MIT-FFD93B?style=flat-square&labelColor=0A0D0B)
 
 **A read-only watchtower for Pons V2 positions on Robinhood Chain.**
+
+**Canary v0.3** - created by [@gippp69](https://x.com/gippp69).
 
 Most chain tools help you enter. Canary is for after the buy: watch the token, compare deterministic snapshots, and wake a human when something materially changes.
 
@@ -37,29 +38,33 @@ npm run canary -- watch 0xWALLET --board --interval 10
 `QUIET` means no deterministic threshold crossed. `WATCH` means inspect. `LEAVE` is the highest-severity local signal. None of them is a trade instruction.
 
 Full field reference: [`docs/BOARD.md`](docs/BOARD.md).
-### Persistent web board
+### Canary v0.3 live desk
 
-Canary also ships a local browser board that remembers snapshots between sweeps and turns the watcher into a small monitoring desk: token table on the left, selected-position memory on the right, search + `WATCH` / `LEAVE` filters, dev-share history, pool/curve activity, fees, deployer context, and deterministic signal history.
+Canary v0.3 includes a local browser control plane. Start the board once, paste a Pons V2 token address, and click `WATCH TOKEN`. The board validates the token against Pons V2, performs a fresh read-only sweep every 10 seconds, remembers each snapshot, and automatically resumes the local watchlist after a board restart.
 
 [![open local board](https://img.shields.io/badge/open_local_board-127.0.0.1%3A4663-B7FF00?style=flat-square&labelColor=0A0D0B)](http://127.0.0.1:4663)
 
 ![Canary persistent web board](assets/web-board.png)
 
-Run the watcher in one terminal:
-
-```bash
-npm run canary -- watch --token 0xTOKEN --interval 10
-```
-
-Then open the board from a second terminal:
-
 ```bash
 npm run board -- --open
 ```
 
-The board lives at [`http://127.0.0.1:4663`](http://127.0.0.1:4663) and is intentionally local-only. The link works on the machine where Canary is running; it is not a hosted public dashboard.
+Inside the live desk you can:
 
-Board memory is stored under `.canary/` and survives browser refreshes and process restarts. It contains observations only вЂ” no private key, signer, approvals, or transaction path.
+- paste a Pons V2 token and start or stop monitoring without a second terminal
+- see live RPC health, latest block, sweep count, last sweep, and next sweep
+- track deployer share, curve reserve or pool price, trades/swaps, fees, phase, and deployer history
+- watch history grow every sweep, including flat-state samples when nothing changes
+- read a per-sweep live feed plus the persistent deterministic signal timeline
+
+Local state lives under `.canary/`:
+
+- `.canary/snapshots.json` - latest token state
+- `.canary/board-memory.json` - historical samples and alerts
+- `.canary/watchlist.json` - tokens the board resumes after restart
+
+The board is intentionally local-only and read-only. It creates no wallet client, imports no account, stores no private key, and has no transaction path.
 
 ---
 
@@ -161,7 +166,7 @@ LEAVE  curve-reserve-drop       real quote reserve fell sharply on the curve
 WATCH  fees-swept               pending curve fees moved out of the curve
 WATCH  volume-dead              no recent CurveBuy / CurveSell was observed
 WATCH  serial-deployer          same deployer has many launches in the index window
-INFO   phase-change             curve в†’ swept в†’ pool в†’ rescued routing changed
+INFO   phase-change             curve -> swept -> pool -> rescued routing changed
 ```
 
 The names are intentionally literal.
@@ -196,7 +201,7 @@ Curve-reserve rules still stop after phase `0`: v4 active liquidity is not misla
 
 ## Wallet discovery
 
-A plain EVM RPC does not have a native вЂњgive me every ERC-20 this wallet ownsвЂќ method. Canary therefore uses a bounded strategy instead of making a fake promise:
+A plain EVM RPC does not have a native "give me every ERC-20 this wallet owns" method. Canary therefore uses a bounded strategy instead of making a fake promise:
 
 1. index recent Pons V2 `TokenLaunched` events
 2. take the newest `DISCOVERY_MAX_TOKENS` launches
@@ -261,7 +266,7 @@ WALLET_PRIVATE_KEY
 
 The CI job also scans `src/` for common transaction-writing and signing APIs. This is defense in depth, not a magical security guarantee: review the source you actually run.
 
-The intended failure mode is boring. If Canary breaks, it should miss a read or print an error вЂ” never move funds.
+The intended failure mode is boring. If Canary breaks, it should miss a read or print an error - never move funds.
 
 ---
 
