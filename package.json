@@ -1,6 +1,6 @@
 {
   "name": "canary-chain",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Read-only Pons V2 watchtower for Robinhood Chain. Deterministic alerts, no signer, no transaction writes.",
   "license": "MIT",
   "type": "module",

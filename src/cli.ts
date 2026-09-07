@@ -1,5 +1,5 @@
-#!/usr/bin/env node
-/** canary — read-only Pons V2 watchtower for Robinhood Chain. */
+﻿#!/usr/bin/env node
+/** canary вЂ” read-only Pons V2 watchtower for Robinhood Chain. */
 
 import { Command } from "commander";
 import { loadConfig, loadLocalEnv, isAddress, KeyRefused } from "./util/env.js";
@@ -12,14 +12,14 @@ import { PonsV2Reader, ROBINHOOD_CHAIN_ID } from "./chain/rpc.js";
 import { bar, short, ago, units } from "./util/fmt.js";
 import { renderBoard } from "./ui/board.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 const PHASE = ["curve", "swept", "pool", "rescued"];
 
 function banner(): void {
   console.log(`\x1b[33m
    ,__,     canary ${VERSION}
    (oo)     the watchtower for Robinhood Chain
-  (\\__/)    read only · no key · it cannot spend
+  (\\__/)    read only В· no key В· it cannot spend
 \x1b[0m`);
 }
 
@@ -162,9 +162,9 @@ program
         process.exitCode = 1;
         return;
       }
-      console.log(`  chain id     ${h.chainId} ${h.chainId === ROBINHOOD_CHAIN_ID ? "✓" : ""}`);
+      console.log(`  chain id     ${h.chainId} ${h.chainId === ROBINHOOD_CHAIN_ID ? "вњ“" : ""}`);
       console.log(`  block        ${h.block?.toString()}`);
-      console.log(`  factory      bytecode present ✓`);
+      console.log(`  factory      bytecode present вњ“`);
     }
   });
 
@@ -253,7 +253,7 @@ program
     // Plain demo keeps the old two-pass behavior. Board demo becomes a live loop for filming.
     if (opts.demo && reader instanceof FixtureReader && !opts.board) {
       reader.advance("0xbbb2", { devHoldPct: 9, liquidityWei: 2_900_000_000_000_000_000n });
-      console.log("\x1b[2m…time passes…\x1b[0m\n");
+      console.log("\x1b[2mвЂ¦time passesвЂ¦\x1b[0m\n");
       await run();
       return;
     }
@@ -327,3 +327,4 @@ export function main(argv: string[] = process.argv): void {
 }
 
 main();
+

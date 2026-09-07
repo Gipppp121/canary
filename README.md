@@ -366,3 +366,16 @@ Canary is independent of Robinhood, Pons and Uniswap and is not endorsed by them
 
 MIT. Start with `watch --demo`, then `doctor --probe`, then one token you can verify manually.
 
+
+<!-- CANARY_V03_BOARD -->
+## Canary v0.3: board-first monitoring
+
+The local board can now start a read-only watcher itself. Paste a Pons V2 token address into **WATCH TOKEN** and Canary launches the same local watcher process that the CLI uses. No signer, private key, transaction builder, or send path is added.
+
+`ash
+npm run board -- --open
+`
+
+v0.3 also expands the persistent board memory from 48 to 240 snapshots per token and adds three live history tracks for deployer share, market state (pool price or curve reserve), and recent activity. The signal panel is now a timeline and shows before/after values when a deterministic rule exposes them.
+
+Board control is enabled only when the server is bound to loopback (127.0.0.1, localhost, or ::1). The board still persists data under .canary/ and remains local by default.
