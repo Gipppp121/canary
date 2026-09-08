@@ -1,4 +1,4 @@
-# Canary v0.3
+# Canary v0.4
 ![canary](assets/banner.png)
 
 ![node](https://img.shields.io/badge/node-%E2%89%A520-9AA694?style=flat-square&labelColor=0A0D0B)
@@ -8,7 +8,11 @@
 
 **A read-only watchtower for Pons V2 positions on Robinhood Chain.**
 
-**Canary v0.3** - created by [@gippp69](https://x.com/gippp69).
+## v0.4 hardening
+
+v0.4 adds graduated-pool liquidity / price / fee / swap signals, optional RPC fallback, and a safer public-board control plane. Public viewers can read the desk, while watcher start/stop requests require a control key when the board is reached through a reverse proxy.
+
+**Canary v0.4** - created by [@gippp69](https://x.com/gippp69).
 
 Most chain tools help you enter. Canary is for after the buy: watch the token, compare deterministic snapshots, and wake a human when something materially changes.
 
@@ -38,9 +42,9 @@ npm run canary -- watch 0xWALLET --board --interval 10
 `QUIET` means no deterministic threshold crossed. `WATCH` means inspect. `LEAVE` is the highest-severity local signal. None of them is a trade instruction.
 
 Full field reference: [`docs/BOARD.md`](docs/BOARD.md).
-### Canary v0.3 live desk
+### Canary v0.4 live desk
 
-Canary v0.3 includes a local browser control plane. Start the board once, paste a Pons V2 token address, and click `WATCH TOKEN`. The board validates the token against Pons V2, performs a fresh read-only sweep every 10 seconds, remembers each snapshot, and automatically resumes the local watchlist after a board restart.
+Canary v0.4 includes a local browser control plane. Start the board once, paste a Pons V2 token address, and click `WATCH TOKEN`. The board validates the token against Pons V2, performs a fresh read-only sweep every 10 seconds, remembers each snapshot, and automatically resumes the local watchlist after a board restart.
 
 [![open local board](https://img.shields.io/badge/open_local_board-127.0.0.1%3A4663-B7FF00?style=flat-square&labelColor=0A0D0B)](http://127.0.0.1:4663)
 
@@ -373,7 +377,7 @@ MIT. Start with `watch --demo`, then `doctor --probe`, then one token you can ve
 
 
 <!-- CANARY_V03_BOARD -->
-## Canary v0.3: board-first monitoring
+## Canary v0.4: board-first monitoring
 
 The local board can now start a read-only watcher itself. Paste a Pons V2 token address into **WATCH TOKEN** and Canary launches the same local watcher process that the CLI uses. No signer, private key, transaction builder, or send path is added.
 

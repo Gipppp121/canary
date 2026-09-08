@@ -1,5 +1,5 @@
 /**
- * Deterministic watch rules.
+ * Canary v0.4 deterministic watch rules.
  *
  * No model, no score, no hidden state. Every alert is derived from one or two
  * snapshots so it can be tested offline and explained line by line.
@@ -14,11 +14,11 @@ export interface Snapshot {
   devHoldPct: number;
   /** Real quote reserve while the launch is still on its Pons V2 curve. */
   liquidityWei: bigint;
-  /** Number of recent curve trades found in the reader's trade window. */
+  /** Number of recent curve trades or pool swaps found in the reader window. */
   trades: number;
-  /** Unix milliseconds of the latest known curve trade. 0 means unknown. */
+  /** Unix milliseconds of the latest known trade. 0 means unknown. */
   lastTradeAt: number;
-  /** Pending quote-denominated fees still sitting on the curve. */
+  /** Pending quote-denominated fees. */
   feesPendingWei: bigint;
   /** Recent launches by the same deployer in the indexed factory window. */
   deployerLaunches: number;
@@ -26,19 +26,16 @@ export interface Snapshot {
   deployerGraduated?: number;
   /** Pons V2 phase: 0 curve, 1 swept, 2 pool, 3 rescued. */
   phase?: number;
-  /** Optional metadata surfaced by the live reader. */
   curve?: string;
   deployer?: string;
   pairToken?: string;
   pairSymbol?: string;
   pairDecimals?: number;
   tokenDecimals?: number;
-  /** Uniswap v4 state, present after phase=2 graduation when readable. */
   poolId?: string;
   poolLiquidity?: bigint;
   poolTick?: number;
   poolPriceQuotePerToken?: number;
-  /** Pending hook fees denominated in the launch token, separate from quote-side feesPendingWei. */
   poolPendingTokenFeesWei?: bigint;
   creatorTaxBps?: number;
   at: number;
@@ -49,6 +46,10 @@ export interface Thresholds {
   liquidityDropPct: number;
   volumeDeadMinutes: number;
   serialDeployerCount: number;
+  /** Optional v0.4 graduated-pool thresholds. Defaults are used when omitted. */
+  poolLiquidityDropPct?: number;
+  poolPriceMovePct?: number;
+  poolSwapBurstCount?: number;
 }
 
 export const DEFAULT_THRESHOLDS: Thresholds = {
@@ -56,6 +57,9 @@ export const DEFAULT_THRESHOLDS: Thresholds = {
   liquidityDropPct: 15,
   volumeDeadMinutes: 30,
   serialDeployerCount: 12,
+  poolLiquidityDropPct: 20,
+  poolPriceMovePct: 25,
+  poolSwapBurstCount: 20,
 };
 
 export interface Alert {
@@ -69,10 +73,11 @@ export interface Alert {
   now?: string;
 }
 
-/**
- * The deployer's token balance fell. This is intentionally not called a
- * "sell": an on-chain balance drop can also be a transfer or burn.
- */
+function threshold(t: Thresholds, key: "poolLiquidityDropPct" | "poolPriceMovePct" | "poolSwapBurstCount"): number {
+  return t[key] ?? DEFAULT_THRESHOLDS[key] ?? 0;
+}
+
+/** A deployer balance drop is a balance movement, not proof of a sale. */
 export function devSelling(a: Snapshot, b: Snapshot, t: Thresholds): Alert | null {
   const drop = a.devHoldPct - b.devHoldPct;
   if (drop <= t.devSellPct) return null;
@@ -88,11 +93,7 @@ export function devSelling(a: Snapshot, b: Snapshot, t: Thresholds): Alert | nul
   };
 }
 
-/**
- * While phase=0, realQuoteReserve is the actual quote asset held by the curve.
- * A sharp drop means quote value left the curve between sweeps. We deliberately
- * do not compare across graduation because the reserve is expected to move.
- */
+/** Sharp quote reserve loss while both snapshots are still on the curve. */
 export function liquidityGone(a: Snapshot, b: Snapshot, t: Thresholds): Alert | null {
   if (a.phase !== undefined && b.phase !== undefined && (a.phase !== 0 || b.phase !== 0)) return null;
   if (a.liquidityWei <= 0n || b.liquidityWei >= a.liquidityWei) return null;
@@ -105,11 +106,33 @@ export function liquidityGone(a: Snapshot, b: Snapshot, t: Thresholds): Alert | 
     token: b.token,
     symbol: b.symbol,
     headline: `${b.symbol}: curve reserve fell ${dropPct.toFixed(1)}%`,
-    detail: `real quote reserve shrank between sweeps while the launch was still on the bonding curve`,
+    detail: "real quote reserve shrank between sweeps while the launch was still on the bonding curve",
+    was: a.liquidityWei.toString(),
+    now: b.liquidityWei.toString(),
   };
 }
 
-/** Pending curve fees fell. That means the curve was swept; it does not prove a creator claimed them. */
+/** v0.4: active Uniswap v4 liquidity fell materially after graduation. */
+export function poolLiquidityGone(a: Snapshot, b: Snapshot, t: Thresholds): Alert | null {
+  if (a.phase !== 2 || b.phase !== 2) return null;
+  if (a.poolLiquidity === undefined || b.poolLiquidity === undefined) return null;
+  if (a.poolLiquidity <= 0n || b.poolLiquidity >= a.poolLiquidity) return null;
+  const dropBps = ((a.poolLiquidity - b.poolLiquidity) * 10_000n) / a.poolLiquidity;
+  const dropPct = Number(dropBps) / 100;
+  if (dropPct <= threshold(t, "poolLiquidityDropPct")) return null;
+  return {
+    rule: "pool-liquidity-drop",
+    level: "leave",
+    token: b.token,
+    symbol: b.symbol,
+    headline: `${b.symbol}: active pool liquidity fell ${dropPct.toFixed(1)}%`,
+    detail: "Uniswap v4 active liquidity decreased materially between graduated-pool sweeps",
+    was: a.poolLiquidity.toString(),
+    now: b.poolLiquidity.toString(),
+  };
+}
+
+/** Pending curve fees moved. This is not a creator-claim verdict. */
 export function feesClaimed(a: Snapshot, b: Snapshot): Alert | null {
   if (a.phase !== undefined && b.phase !== undefined && (a.phase !== 0 || b.phase !== 0)) return null;
   if (b.feesPendingWei >= a.feesPendingWei) return null;
@@ -121,10 +144,68 @@ export function feesClaimed(a: Snapshot, b: Snapshot): Alert | null {
     symbol: b.symbol,
     headline: `${b.symbol}: pending curve fees moved`,
     detail: `${delta.toString()} wei left the curve fee balance between sweeps`,
+    was: a.feesPendingWei.toString(),
+    now: b.feesPendingWei.toString(),
   };
 }
 
-/** No recent curve trade. Unknown last-trade data stays quiet instead of inventing a timestamp. */
+/** v0.4: launch-token hook fees moved after graduation. */
+export function poolFeesMoved(a: Snapshot, b: Snapshot): Alert | null {
+  if (a.phase !== 2 || b.phase !== 2) return null;
+  if (a.poolPendingTokenFeesWei === undefined || b.poolPendingTokenFeesWei === undefined) return null;
+  if (b.poolPendingTokenFeesWei >= a.poolPendingTokenFeesWei) return null;
+  const delta = a.poolPendingTokenFeesWei - b.poolPendingTokenFeesWei;
+  return {
+    rule: "pool-token-fees-moved",
+    level: "warn",
+    token: b.token,
+    symbol: b.symbol,
+    headline: `${b.symbol}: pending pool token fees moved`,
+    detail: `${delta.toString()} raw token units left the hook fee balance between sweeps`,
+    was: a.poolPendingTokenFeesWei.toString(),
+    now: b.poolPendingTokenFeesWei.toString(),
+  };
+}
+
+/** v0.4: large pool price movement is volatility context, not a trade instruction. */
+export function poolPriceMoved(a: Snapshot, b: Snapshot, t: Thresholds): Alert | null {
+  if (a.phase !== 2 || b.phase !== 2) return null;
+  const before = a.poolPriceQuotePerToken;
+  const after = b.poolPriceQuotePerToken;
+  if (before === undefined || after === undefined || before <= 0 || after <= 0) return null;
+  if (!Number.isFinite(before) || !Number.isFinite(after)) return null;
+  const movePct = ((after - before) / before) * 100;
+  if (Math.abs(movePct) < threshold(t, "poolPriceMovePct")) return null;
+  return {
+    rule: "pool-price-move",
+    level: "warn",
+    token: b.token,
+    symbol: b.symbol,
+    headline: `${b.symbol}: pool price moved ${movePct >= 0 ? "+" : ""}${movePct.toFixed(1)}%`,
+    detail: "display price changed materially between graduated-pool sweeps; this is volatility context only",
+    was: before.toString(),
+    now: after.toString(),
+  };
+}
+
+/** v0.4: a sudden increase in observed pool swaps. */
+export function poolSwapBurst(a: Snapshot, b: Snapshot, t: Thresholds): Alert | null {
+  if (a.phase !== 2 || b.phase !== 2) return null;
+  const delta = b.trades - a.trades;
+  if (delta < threshold(t, "poolSwapBurstCount")) return null;
+  return {
+    rule: "pool-swap-burst",
+    level: "warn",
+    token: b.token,
+    symbol: b.symbol,
+    headline: `${b.symbol}: ${delta} additional swaps entered the recent window`,
+    detail: "observed pool activity increased sharply between sweeps",
+    was: String(a.trades),
+    now: String(b.trades),
+  };
+}
+
+/** Unknown trade history stays quiet instead of inventing a timestamp. */
 export function volumeDead(b: Snapshot, t: Thresholds, now: number = Date.now()): Alert | null {
   if (b.phase !== undefined && b.phase !== 0) return null;
   if (!b.lastTradeAt || b.lastTradeAt <= 0) return null;
@@ -158,7 +239,7 @@ export function serialDeployer(b: Snapshot, t: Thresholds): Alert | null {
   };
 }
 
-/** A launch changing venue is useful context, but not a danger verdict. */
+/** A launch changing venue is context, not a danger verdict. */
 export function phaseChanged(a: Snapshot, b: Snapshot): Alert | null {
   if (a.phase === undefined || b.phase === undefined || a.phase === b.phase) return null;
   const names = ["curve", "swept", "pool", "rescued"];
@@ -167,12 +248,12 @@ export function phaseChanged(a: Snapshot, b: Snapshot): Alert | null {
     level: "info",
     token: b.token,
     symbol: b.symbol,
-    headline: `${b.symbol}: phase changed ${names[a.phase] ?? a.phase} → ${names[b.phase] ?? b.phase}`,
-    detail: `Pons V2 routing state changed between sweeps`,
+    headline: `${b.symbol}: phase changed ${names[a.phase] ?? a.phase} -> ${names[b.phase] ?? b.phase}`,
+    detail: "Pons V2 routing state changed between sweeps",
   };
 }
 
-/** Run every rule over one position. Worst news first. */
+/** Run every deterministic rule over one position. Worst news first. */
 export function evaluate(
   before: Snapshot | undefined,
   after: Snapshot,
@@ -185,10 +266,18 @@ export function evaluate(
     if (phase) out.push(phase);
     const dev = devSelling(before, after, t);
     if (dev) out.push(dev);
-    const liq = liquidityGone(before, after, t);
-    if (liq) out.push(liq);
-    const fees = feesClaimed(before, after);
-    if (fees) out.push(fees);
+    const curveLiq = liquidityGone(before, after, t);
+    if (curveLiq) out.push(curveLiq);
+    const poolLiq = poolLiquidityGone(before, after, t);
+    if (poolLiq) out.push(poolLiq);
+    const curveFees = feesClaimed(before, after);
+    if (curveFees) out.push(curveFees);
+    const tokenFees = poolFeesMoved(before, after);
+    if (tokenFees) out.push(tokenFees);
+    const priceMove = poolPriceMoved(before, after, t);
+    if (priceMove) out.push(priceMove);
+    const burst = poolSwapBurst(before, after, t);
+    if (burst) out.push(burst);
   }
   const dead = volumeDead(after, t, now);
   if (dead) out.push(dead);

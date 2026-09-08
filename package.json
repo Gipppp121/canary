@@ -1,7 +1,7 @@
 {
     "name":  "canary-chain",
-    "version":  "0.3.0",
-    "description":  "Canary v0.3 - persistent read-only Pons V2 watchtower for Robinhood Chain with deterministic alerts and a local live desk.",
+    "version": "0.4.0",
+    "description": "Canary v0.4 - resilient read-only Pons V2 watchtower with persistent memory, pool signals, RPC fallback, and hardened web control.",
     "license":  "MIT",
     "type":  "module",
     "bin":  {

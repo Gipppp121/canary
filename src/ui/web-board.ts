@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-/** Canary v0.3 local control plane and persistent read-only web desk. */
+/** Canary v0.4 local control plane and persistent read-only web desk. */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { spawn } from "node:child_process";
 import { PonsV2Reader } from "../chain/rpc.js";
+import type { Reader } from "../chain/reader.js";
+import { FallbackReader, rpcUrlList } from "../chain/fallback-reader.js";
+import { controlAuthorized } from "./control-auth.js";
 import { Store } from "../watch/store.js";
 import { evaluate, type Alert, type Snapshot } from "../watch/signals.js";
 import { isAddress, loadConfig, loadLocalEnv } from "../util/env.js";
@@ -61,7 +64,7 @@ interface WatcherRuntime {
   token: string;
   startedAt: number;
   status: WatcherStatus;
-  reader: PonsV2Reader;
+  reader: Reader;
   timer?: ReturnType<typeof setTimeout>;
   lastSweepAt: number;
   nextSweepAt: number;
@@ -267,16 +270,17 @@ function viewSnapshot(s: Snapshot, alerts: RememberedAlert[], now: number) {
   };
 }
 
-function makeReader(token?: string): PonsV2Reader {
-  return new PonsV2Reader({
-    rpcUrl: CONFIG.rpcUrl,
+function makeReader(token?: string): Reader {
+  const urls = rpcUrlList(CONFIG.rpcUrl, process.env.RPC_FALLBACK_URLS);
+  return new FallbackReader(urls.map((rpcUrl) => new PonsV2Reader({
+    rpcUrl,
     factory: CONFIG.ponsFactory as `0x${string}`,
     indexLookbackBlocks: CONFIG.indexLookbackBlocks,
     tradeLookbackBlocks: CONFIG.tradeLookbackBlocks,
     logChunkBlocks: CONFIG.logChunkBlocks,
     pinnedTokens: token ? [token as `0x${string}`] : [],
     discoveryMaxTokens: CONFIG.discoveryMaxTokens,
-  });
+  })));
 }
 
 function worstStatus(alerts: Alert[]): "QUIET" | "WATCH" | "LEAVE" | "INFO" {
@@ -498,6 +502,7 @@ function apiState() {
     watchers: watcherState(),
     rpc: rpcHealth,
     creatorX: CREATOR_X,
+    control: { mode: CONTROL_TOKEN ? "key" : "local-only", remoteWritesRequireKey: true },
   };
 }
 
@@ -540,14 +545,30 @@ function hasArg(name: string): boolean {
 
 const port = Math.max(1, Math.min(65535, Number.parseInt(parseArg("--port", "4663"), 10) || 4663));
 const host = parseArg("--host", "127.0.0.1");
-const localControlEnabled = isLoopbackHost(host);
+const CONTROL_TOKEN = process.env.CANARY_CONTROL_TOKEN?.trim() || "";
+
+function headerText(req: IncomingMessage, name: string): string {
+  const value = req.headers[name.toLowerCase()];
+  if (Array.isArray(value)) return value[0] ?? "";
+  return typeof value === "string" ? value : "";
+}
+
+function requestControlAllowed(req: IncomingMessage): boolean {
+  return controlAuthorized({
+    boundHost: host,
+    configuredToken: CONTROL_TOKEN,
+    suppliedToken: headerText(req, "x-canary-control"),
+    forwardedFor: headerText(req, "x-forwarded-for"),
+    remoteAddress: req.socket.remoteAddress ?? "",
+  });
+}
 const PAGE = String.raw`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Canary v0.3 - persistent Pons V2 watchtower</title>
+<title>Canary v0.4 - persistent Pons V2 watchtower</title>
 <style>
 :root{
   --bg:#080a07;--panel:#0f120d;--panel2:#13170f;--line:#293023;--line2:#354027;
@@ -649,11 +670,11 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 </style>
 </head>
 <body>
-<div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.3</a><div class="navLinks"><a href="#desk">live desk</a><a href="#how">how it works</a><a href="#signals">signals</a><a href="#memory">memory</a><a class="navCta" href="#desk">watch a token</a></div></div></div>
+<div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.4</a><div class="navLinks"><a href="#desk">live desk</a><a href="#how">how it works</a><a href="#signals">signals</a><a href="#memory">memory</a><a class="navCta" href="#desk">watch a token</a></div></div></div>
 
 <header class="hero" id="overview">
   <div class="eyebrow"><span class="dot"></span> live read-only monitoring for Pons V2</div>
-  <h1 class="heroTitle">CAN<span>ARY</span><small>v0.3</small></h1>
+  <h1 class="heroTitle">CAN<span>ARY</span><small>v0.4</small></h1>
   <p class="heroCopy">A persistent watchtower for Robinhood Chain. Paste a Pons V2 token and Canary keeps reading the chain, <strong>remembers what changed between sweeps</strong>, and turns deterministic changes into QUIET, WATCH, or LEAVE.</p>
   <div class="heroActions"><a class="btn primary" href="#desk">open live desk</a><a class="btn secondary" href="#how">see the workflow</a></div>
   <div class="creator">Created by <a id="creatorLink" href="https://x.com/gippp69" target="_blank" rel="noreferrer">@gippp69 on X</a></div>
@@ -667,7 +688,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 
 <main class="wrap">
 <section id="desk">
-  <div class="top"><div><div class="brand">Canary v0.3 live desk</div><div class="sub">Pons V2 / Robinhood Chain 4663 / persistent read-only watchtower</div></div><span class="pill">READ ONLY</span><div class="spacer"></div><div id="heartbeat" class="heartbeat">loading local state...</div></div>
+  <div class="top"><div><div class="brand">Canary v0.4 live desk</div><div class="sub">Pons V2 / Robinhood Chain 4663 / persistent read-only watchtower</div></div><span class="pill">READ ONLY</span><div class="spacer"></div><div id="heartbeat" class="heartbeat">loading local state...</div></div>
 
   <div class="stats">
     <div class="card"><div id="tracked" class="num">0</div><div class="label">tracked positions</div></div>
@@ -681,7 +702,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
   <div class="layout">
     <section class="panel">
       <h2>positions remembered by Canary</h2>
-      <div class="watchbar"><input id="watchToken" autocomplete="off" spellcheck="false" placeholder="paste a Pons V2 token address"><button id="watchBtn" class="watchbtn">WATCH TOKEN</button></div>
+      <div class="watchbar"><input id="watchToken" autocomplete="off" spellcheck="false" placeholder="paste a Pons V2 token address"><button id="watchBtn" class="watchbtn">WATCH TOKEN</button><button id="controlBtn" class="tab" type="button">CONTROL KEY</button></div>
       <div id="watchMsg" class="watchmsg">Starts a local read-only watcher. No signer. No transaction path.</div>
       <div id="watcherRail" class="watcherRail"></div>
       <div class="tools"><input id="search" placeholder="search symbol / token / deployer"><div class="tabs"><button class="tab on" data-filter="ALL">all</button><button class="tab" data-filter="WATCH">watch</button><button class="tab" data-filter="LEAVE">leave</button></div></div>
@@ -742,7 +763,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
   <div class="safety"><div class="safetyBig"><h3>no transaction path.</h3><p>No wallet client, no imported account, no private key flow and no automatic exit hiding behind the dashboard. WATCH TOKEN only starts another read-only process.</p></div><div class="safetyList"><div class="safetyItem"><b>NO SIGNER</b><span>public client reads only</span></div><div class="safetyItem"><b>NO KEY</b><span>signing material is refused</span></div><div class="safetyItem"><b>NO BUY BUTTON</b><span>signals are context, not orders</span></div><div class="safetyItem"><b>PLAIN RULES</b><span>thresholds live in source</span></div></div></div>
 </section>
 
-<div class="footer"><b>Canary v0.3</b><span>Robinhood Chain / Pons V2 / persistent read-only watchtower / created by <span id="footerCreator">@gippp69</span></span></div>
+<div class="footer"><b>Canary v0.4</b><span>Robinhood Chain / Pons V2 / persistent read-only watchtower / created by <span id="footerCreator">@gippp69</span></span></div>
 </main>
 
 <script>
@@ -857,13 +878,26 @@ async function load(){
   }
 }
 
+function controlHeaders(){
+  var h={'content-type':'application/json'};
+  try{var key=localStorage.getItem('canaryControlKey')||'';if(key)h['x-canary-control']=key}catch(e){}
+  return h
+}
+function saveControlKey(){
+  var current='';try{current=localStorage.getItem('canaryControlKey')||''}catch(e){}
+  var value=window.prompt('Canary control key. Leave blank to clear it.',current);
+  if(value===null)return;
+  try{if(value)localStorage.setItem('canaryControlKey',value);else localStorage.removeItem('canaryControlKey')}catch(e){}
+  var msg=document.getElementById('watchMsg');msg.className='watchmsg ok';msg.textContent=value?'Control key saved in this browser.':'Control key cleared.'
+}
+
 async function startWatch(){
   var input=document.getElementById('watchToken'),btn=document.getElementById('watchBtn'),msg=document.getElementById('watchMsg'),token=input.value.trim();
   if(!token){msg.className='watchmsg err';msg.textContent='Paste a token address first.';return}
   if(!/^0x[a-fA-F0-9]{40}$/.test(token)){msg.className='watchmsg err';msg.textContent='That is not a valid EVM token address.';return}
   btn.disabled=true;msg.className='watchmsg';msg.textContent='Starting local read-only watcher...';
   try{
-    var r=await fetch('/api/watch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:token})});
+    var r=await fetch('/api/watch',{method:'POST',headers:controlHeaders(),body:JSON.stringify({token:token})});
     var data=await r.json();
     if(!r.ok||!data.ok){
       msg.className='watchmsg err';msg.textContent=data.error||'Failed to start watcher.'
@@ -881,12 +915,13 @@ async function startWatch(){
 async function stopWatch(token){
   if(!token)return;
   try{
-    await fetch('/api/unwatch',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:token})});
+    await fetch('/api/unwatch',{method:'POST',headers:controlHeaders(),body:JSON.stringify({token:token})});
     setTimeout(load,150)
   }catch(e){}
 }
 
 document.getElementById('watchBtn').addEventListener('click',startWatch);
+document.getElementById('controlBtn').addEventListener('click',saveControlKey);
 document.getElementById('watchToken').addEventListener('keydown',function(e){if(e.key==='Enter')startWatch()});
 document.getElementById('search').addEventListener('input',renderRows);
 Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
@@ -913,8 +948,8 @@ const server = createServer(async (req, res) => {
   if (req.method === "GET" && path === "/api/state") return json(res, 200, apiState());
 
   if (req.method === "POST" && path === "/api/watch") {
-    if (!localControlEnabled) {
-      return json(res, 403, { ok: false, error: "local watcher control is disabled outside loopback" });
+    if (!requestControlAllowed(req)) {
+      return json(res, 403, { ok: false, error: "watcher control is locked; direct localhost or a valid control key is required" });
     }
     try {
       const raw = await readBody(req);
@@ -928,8 +963,8 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.method === "POST" && path === "/api/unwatch") {
-    if (!localControlEnabled) {
-      return json(res, 403, { ok: false, error: "local watcher control is disabled outside loopback" });
+    if (!requestControlAllowed(req)) {
+      return json(res, 403, { ok: false, error: "watcher control is locked; direct localhost or a valid control key is required" });
     }
     try {
       const raw = await readBody(req);
@@ -952,11 +987,11 @@ const server = createServer(async (req, res) => {
 
 server.listen(port, host, () => {
   const url = `http://${host}:${port}`;
-  console.log(`\nCanary v0.3 board  ${url}`);
+  console.log(`\nCanary v0.4 board  ${url}`);
   console.log(`RPC               ${CONFIG.rpcUrl}`);
   console.log(`memory            ${MEMORY_FILE}`);
   console.log(`watchlist         ${WATCHLIST_FILE}`);
-  console.log(`control           ${localControlEnabled ? "WATCH TOKEN enabled" : "disabled outside loopback"}`);
+  console.log(`control           ${CONTROL_TOKEN ? "key protected" : "direct localhost only"}`);
   console.log("read only         no signer, no key, no transaction path\n");
 
   for (const token of readWatchlist()) startWatcher(token, false);

@@ -1,5 +1,4 @@
 import type { Alert, Snapshot } from "../watch/signals.js";
-import * as readline from "node:readline";
 import { ago, bar, short, units } from "../util/fmt.js";
 
 const C = {
@@ -25,6 +24,18 @@ export interface BoardMeta {
   rpcLabel?: string;
 }
 
+interface BoardState {
+  snapshots: Snapshot[];
+  alerts: Alert[];
+  meta: BoardMeta;
+}
+
+let latestState: BoardState | undefined;
+let animationTimer: ReturnType<typeof setInterval> | undefined;
+let animationTick = 0;
+let terminalModeEntered = false;
+let exitHookInstalled = false;
+
 function colour(text: string, code: string): string {
   if (process.env.NO_COLOR) return text;
   return `${code}${text}${C.reset}`;
@@ -44,35 +55,142 @@ function alertTag(level: Alert["level"]): string {
   return colour(" INFO  ", C.cyan + C.bold);
 }
 
-function hr(width = 112): string {
+function hr(width = 104): string {
   return colour("─".repeat(width), C.gray);
 }
 
-function logo(): string {
-  return colour(
-` ██████╗ █████╗ ███╗   ██╗ █████╗ ██████╗ ██╗   ██╗
-██╔════╝██╔══██╗████╗  ██║██╔══██╗██╔══██╗╚██╗ ██╔╝
-██║     ███████║██╔██╗ ██║███████║██████╔╝ ╚████╔╝
-██║     ██╔══██║██║╚██╗██║██╔══██║██╔══██╗  ╚██╔╝
-╚██████╗██║  ██║██║ ╚████║██║  ██║██║  ██║   ██║
- ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝`, C.lime);
+function centerLine(text: string): string {
+  const width = Math.max(80, process.stdout.columns ?? 112);
+  const visible = text.replace(/\x1b\[[0-9;]*m/g, "");
+  const pad = Math.max(0, Math.floor((width - visible.length) / 2));
+  return " ".repeat(pad) + text;
 }
 
-let exitHookInstalled = false;
+function logo(): string {
+  const lines = [
+    " ██████  █████  █   █  █████  ████   █   █ ",
+    " █       █   █  ██  █  █   █  █   █   █ █  ",
+    " █       █████  █ █ █  █████  ████     █   ",
+    " █       █   █  █  ██  █   █  █  █     █   ",
+    " ██████  █   █  █   █  █   █  █   █    █   ",
+  ];
+  return lines.map((line) => centerLine(colour(line, C.lime + C.bold))).join("\n");
+}
+
+function enterTerminalMode(): void {
+  if (!process.stdout.isTTY || terminalModeEntered) return;
+  terminalModeEntered = true;
+
+  // Use the alternate screen buffer so animation never floods normal terminal scrollback.
+  process.stdout.write("\x1b[?1049h\x1b[?25l\x1b[2J\x1b[H");
+
+  if (!exitHookInstalled) {
+    exitHookInstalled = true;
+
+    const restoreTerminal = () => {
+      if (!process.stdout.isTTY) return;
+      process.stdout.write("\x1b[?25h\x1b[?1049l");
+    };
+
+    process.once("exit", restoreTerminal);
+    process.once("SIGINT", () => {
+      restoreTerminal();
+      process.exit(130);
+    });
+    process.once("SIGTERM", () => {
+      restoreTerminal();
+      process.exit(143);
+    });
+  }
+}
 
 function clearScreen(): void {
   if (!process.stdout.isTTY) return;
-  // Windows Terminal + npm can leave old frames in scrollback if we only emit ANSI clear.
-  // Rewind to 0,0 and erase the visible frame instead, so every refresh occupies one screen.
-  readline.cursorTo(process.stdout, 0, 0);
-  readline.clearScreenDown(process.stdout);
-  process.stdout.write("\x1b[?25l");
-  if (!exitHookInstalled) {
-    exitHookInstalled = true;
-    const showCursor = () => { if (process.stdout.isTTY) process.stdout.write("\x1b[?25h"); };
-    process.once("exit", showCursor);
-    process.once("SIGINT", () => { showCursor(); process.exit(130); });
+  enterTerminalMode();
+
+  // Reuse exactly one visible frame. Nothing is appended to scrollback.
+  process.stdout.write("\x1b[H\x1b[2J");
+}
+
+function mascotStatus(alerts: Alert[]): { label: string; code: string } {
+  if (alerts.some((a) => a.level === "leave")) {
+    return { label: "CANARY ALERT", code: C.red };
   }
+  if (alerts.some((a) => a.level === "warn")) {
+    return { label: "CANARY WATCH", code: C.yellow };
+  }
+  return { label: "CANARY PATROL", code: C.lime };
+}
+
+const RIGHT_BIRD = [
+  [
+    "   ▄▄       ",
+    " ▄████▄     ",
+    "██ ● ██▄▄>  ",
+    " ▀████▀     ",
+    "  ▀  ▀      ",
+  ],
+  [
+    "   ▄▄       ",
+    " ▄████▄     ",
+    "██ ● ████>  ",
+    "  ████▀     ",
+    " ▄▀  ▀      ",
+  ],
+  [
+    "   ▄▄       ",
+    " ▄████▄     ",
+    "██ ● ██▄▄>  ",
+    " ▄████▀     ",
+    "▀  ▀        ",
+  ],
+] as const;
+
+const LEFT_BIRD = [
+  [
+    "       ▄▄   ",
+    "     ▄████▄ ",
+    "  <▄▄██ ● ██",
+    "     ▀████▀ ",
+    "      ▀  ▀  ",
+  ],
+  [
+    "       ▄▄   ",
+    "     ▄████▄ ",
+    "  <████ ● ██",
+    "     ▀████  ",
+    "      ▀  ▀▄ ",
+  ],
+  [
+    "       ▄▄   ",
+    "     ▄████▄ ",
+    "  <▄▄██ ● ██",
+    "     ▀████▄ ",
+    "        ▀  ▀",
+  ],
+] as const;
+
+function pixelCanary(alerts: Alert[]): string {
+  const terminalWidth = Math.max(90, Math.min(process.stdout.columns ?? 112, 160));
+  const spriteWidth = 13;
+  const statusWidth = 22;
+  const laneWidth = Math.max(36, terminalWidth - spriteWidth - statusWidth - 8);
+
+  const raw = (animationTick * 2) % (laneWidth * 2);
+  const movingRight = raw <= laneWidth;
+  const x = movingRight ? raw : (laneWidth * 2 - raw);
+  const frames = movingRight ? RIGHT_BIRD : LEFT_BIRD;
+  const frame = frames[Math.floor(animationTick / 2) % frames.length] ?? frames[0];
+  const status = mascotStatus(alerts);
+
+  animationTick++;
+
+  const leftMargin = 3;
+  return frame.map((line, i) => {
+    const left = " ".repeat(leftMargin + x);
+    const suffix = i === 2 ? `   [ ${status.label} ]` : "";
+    return colour(left + line + suffix, status.code + C.bold);
+  }).join("\n");
 }
 
 function fmtReserve(s: Snapshot): string {
@@ -103,13 +221,21 @@ function fmtPrice(s: Snapshot): string {
   return p.toExponential(3);
 }
 
-export function renderBoard(snapshots: Snapshot[], alerts: Alert[], meta: BoardMeta): void {
+function drawBoard(): void {
+  if (!latestState) return;
+
+  const { snapshots, alerts, meta } = latestState;
   clearScreen();
+
   const now = new Date();
   const hhmmss = now.toTimeString().slice(0, 8);
 
+  console.log("");
   console.log(logo());
-  console.log(colour("the read-only watchtower for Pons V2 on Robinhood Chain", C.dim));
+  console.log("");
+  console.log(pixelCanary(alerts));
+  console.log("");
+  console.log(centerLine(colour("CANARY v0.3  /  Pons V2 read-only watchtower  /  Robinhood Chain 4663", C.cyan + C.bold)));
   console.log("");
   console.log(
     `${colour("canary watch", C.lime + C.bold)} · pons v2 · Robinhood Chain (4663) · ` +
@@ -134,6 +260,7 @@ export function renderBoard(snapshots: Snapshot[], alerts: Alert[], meta: BoardM
       `${colour(short(s.token).padEnd(13), C.gray)} ${colour(phase.padEnd(7), C.cyan)} ` +
       `${colour(status.text.padEnd(6), status.code + C.bold)}  signals ${tokenAlerts.length}`
     );
+
     if (s.phase === 2) {
       console.log(
         `  dev ${s.devHoldPct.toFixed(2).padStart(6)}% ${colour(devBar, s.devHoldPct >= 15 ? C.red : C.lime)}  ` +
@@ -159,11 +286,13 @@ export function renderBoard(snapshots: Snapshot[], alerts: Alert[], meta: BoardM
         `deployer ${s.deployer ? short(s.deployer) : "unknown"}`
       );
     }
+
     if (tokenAlerts.length) {
       for (const a of tokenAlerts.slice(0, 2)) {
         console.log(`  ${alertTag(a.level)} ${a.rule} · ${a.detail}`);
       }
     }
+
     console.log(colour("  read complete · no transaction path exists", C.dim));
     console.log("");
   }
@@ -177,5 +306,23 @@ export function renderBoard(snapshots: Snapshot[], alerts: Alert[], meta: BoardM
   } else {
     console.log(`${colour("QUIET", C.green + C.bold)}  no rule crossed its threshold on this sweep`);
   }
+
   console.log(colour("\nctrl+c to stop · state persists in .canary/ · Telegram remains best-effort if configured", C.dim));
+}
+
+function ensureAnimation(): void {
+  if (animationTimer || !process.stdout.isTTY) return;
+
+  animationTimer = setInterval(() => {
+    drawBoard();
+  }, 120);
+
+  // Do not keep one-shot commands alive just because the mascot is animated.
+  animationTimer.unref();
+}
+
+export function renderBoard(snapshots: Snapshot[], alerts: Alert[], meta: BoardMeta): void {
+  latestState = { snapshots, alerts, meta };
+  drawBoard();
+  ensureAnimation();
 }

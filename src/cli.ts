@@ -9,10 +9,11 @@ import { evaluate, DEFAULT_THRESHOLDS, type Snapshot } from "./watch/signals.js"
 import { TerminalSink, TelegramSink, Deduped } from "./alert/sink.js";
 import { FixtureReader } from "./chain/reader.js";
 import { PonsV2Reader, ROBINHOOD_CHAIN_ID } from "./chain/rpc.js";
+import { FallbackReader, rpcUrlList } from "./chain/fallback-reader.js";
 import { bar, short, ago, units } from "./util/fmt.js";
 import { renderBoard } from "./ui/board.js";
 
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 const PHASE = ["curve", "swept", "pool", "rescued"];
 
 function banner(): void {
@@ -78,15 +79,16 @@ function advanceDemo(reader: FixtureReader, tick: number): void {
 
 function liveReader() {
   const cfg = loadConfig();
-  return new PonsV2Reader({
-    rpcUrl: cfg.rpcUrl,
+  const urls = rpcUrlList(cfg.rpcUrl, process.env.RPC_FALLBACK_URLS);
+  return new FallbackReader(urls.map((rpcUrl) => new PonsV2Reader({
+    rpcUrl,
     factory: cfg.ponsFactory as `0x${string}`,
     indexLookbackBlocks: cfg.indexLookbackBlocks,
     tradeLookbackBlocks: cfg.tradeLookbackBlocks,
     logChunkBlocks: cfg.logChunkBlocks,
     pinnedTokens: cfg.tokens.filter(isAddress) as `0x${string}`[],
     discoveryMaxTokens: cfg.discoveryMaxTokens,
-  });
+  })));
 }
 
 function printSnapshot(s: Snapshot): void {
