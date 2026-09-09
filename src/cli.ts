@@ -155,6 +155,9 @@ program
     console.log(`  curve reserve falls >        ${cfg.liquidityDropPct}%`);
     console.log(`  no curve trade for           ${cfg.volumeDeadMinutes}m`);
     console.log(`  deployer launches >=         ${cfg.serialDeployerCount}`);
+    console.log(`  pool liquidity falls >       ${cfg.poolLiquidityDropPct}%`);
+    console.log(`  pool price moves >=          ${cfg.poolPriceMovePct}%`);
+    console.log(`  pool swap burst >=           ${cfg.poolSwapBurstCount}`);
 
     if (opts.probe) {
       console.log("\nprobe");
@@ -178,6 +181,10 @@ program
       ["deployer-balance-drop", "LEAVE", "deployer token balance fell between sweeps"],
       ["curve-reserve-drop", "LEAVE", "real quote reserve fell while still on the curve"],
       ["fees-swept", "WATCH", "pending curve fees moved out of the curve"],
+      ["pool-liquidity-drop", "LEAVE", "graduated pool active liquidity fell materially"],
+      ["pool-price-move", "WATCH", "graduated pool price moved beyond threshold"],
+      ["pool-token-fees-moved", "WATCH", "pending launch-token hook fees moved"],
+      ["pool-swap-burst", "WATCH", "graduated pool swap activity jumped between sweeps"],
       ["volume-dead", "WATCH", "no indexed curve trade for the configured window"],
       ["serial-deployer", "WATCH", "same deployer has many recent launches"],
       ["phase-change", "INFO", "launch routing moved between curve/swept/pool/rescued"],
@@ -234,6 +241,9 @@ program
         liquidityDropPct: cfg.liquidityDropPct,
         volumeDeadMinutes: cfg.volumeDeadMinutes,
         serialDeployerCount: cfg.serialDeployerCount,
+        poolLiquidityDropPct: cfg.poolLiquidityDropPct,
+        poolPriceMovePct: cfg.poolPriceMovePct,
+        poolSwapBurstCount: cfg.poolSwapBurstCount,
       }, Date.now(), opts.demo ? [] : direct);
       if (opts.board) {
         renderBoard(res.snapshots, res.alerts, {

@@ -183,6 +183,9 @@ function sampleMemory(): MemoryFile {
       liquidityDropPct: CONFIG.liquidityDropPct,
       volumeDeadMinutes: CONFIG.volumeDeadMinutes,
       serialDeployerCount: CONFIG.serialDeployerCount,
+      poolLiquidityDropPct: CONFIG.poolLiquidityDropPct,
+      poolPriceMovePct: CONFIG.poolPriceMovePct,
+      poolSwapBurstCount: CONFIG.poolSwapBurstCount,
     }, snapshot.at || Date.now());
 
     for (const alert of alerts) {
@@ -325,6 +328,9 @@ async function persistSnapshot(after: Snapshot): Promise<{ before: Snapshot | un
       liquidityDropPct: CONFIG.liquidityDropPct,
       volumeDeadMinutes: CONFIG.volumeDeadMinutes,
       serialDeployerCount: CONFIG.serialDeployerCount,
+      poolLiquidityDropPct: CONFIG.poolLiquidityDropPct,
+      poolPriceMovePct: CONFIG.poolPriceMovePct,
+      poolSwapBurstCount: CONFIG.poolSwapBurstCount,
     }, after.at || Date.now());
     store.put(after);
     store.save();

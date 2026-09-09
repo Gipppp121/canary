@@ -16,6 +16,9 @@ export interface Config {
   liquidityDropPct: number;
   volumeDeadMinutes: number;
   serialDeployerCount: number;
+  poolLiquidityDropPct: number;
+  poolPriceMovePct: number;
+  poolSwapBurstCount: number;
   indexLookbackBlocks: number;
   tradeLookbackBlocks: number;
   logChunkBlocks: number;
@@ -35,6 +38,9 @@ const DEFAULTS: Config = {
   liquidityDropPct: 15,
   volumeDeadMinutes: 30,
   serialDeployerCount: 12,
+  poolLiquidityDropPct: 20,
+  poolPriceMovePct: 25,
+  poolSwapBurstCount: 20,
   indexLookbackBlocks: 400_000,
   tradeLookbackBlocks: 20_000,
   logChunkBlocks: 20_000,
@@ -85,6 +91,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     liquidityDropPct: num(env.LIQUIDITY_DROP_PCT, DEFAULTS.liquidityDropPct),
     volumeDeadMinutes: num(env.VOLUME_DEAD_MINUTES, DEFAULTS.volumeDeadMinutes),
     serialDeployerCount: num(env.SERIAL_DEPLOYER_COUNT, DEFAULTS.serialDeployerCount),
+    poolLiquidityDropPct: num(env.POOL_LIQUIDITY_DROP_PCT, DEFAULTS.poolLiquidityDropPct),
+    poolPriceMovePct: num(env.POOL_PRICE_MOVE_PCT, DEFAULTS.poolPriceMovePct),
+    poolSwapBurstCount: num(env.POOL_SWAP_BURST_COUNT, DEFAULTS.poolSwapBurstCount),
     indexLookbackBlocks: num(env.INDEX_LOOKBACK_BLOCKS, DEFAULTS.indexLookbackBlocks),
     tradeLookbackBlocks: num(env.TRADE_LOOKBACK_BLOCKS, DEFAULTS.tradeLookbackBlocks),
     logChunkBlocks: num(env.LOG_CHUNK_BLOCKS, DEFAULTS.logChunkBlocks),

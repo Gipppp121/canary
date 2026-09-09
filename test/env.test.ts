@@ -28,6 +28,9 @@ test("defaults are sane with an empty environment", () => {
   const cfg = loadConfig({} as NodeJS.ProcessEnv);
   assert.equal(cfg.pollSeconds, 45);
   assert.equal(cfg.devSellPct, 2);
+  assert.equal(cfg.poolLiquidityDropPct, 20);
+  assert.equal(cfg.poolPriceMovePct, 25);
+  assert.equal(cfg.poolSwapBurstCount, 20);
   assert.ok(cfg.rpcUrl.startsWith("https://"));
 });
 
