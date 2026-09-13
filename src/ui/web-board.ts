@@ -568,13 +568,70 @@ function requestControlAllowed(req: IncomingMessage): boolean {
     remoteAddress: req.socket.remoteAddress ?? "",
   });
 }
+
+const PUBLIC_SCAN_WINDOW_MS = 60_000;
+const PUBLIC_SCAN_LIMIT = 12;
+const PUBLIC_SCAN_CACHE_MS = 15_000;
+const publicScanWindows = new Map<string, { startedAt: number; count: number }>();
+const publicScanCache = new Map<string, { at: number; value: unknown }>();
+
+function publicClientIp(req: IncomingMessage): string {
+  const forwarded = headerText(req, "x-forwarded-for").split(",")[0]?.trim();
+  return forwarded || req.socket.remoteAddress || "unknown";
+}
+
+function takePublicScanBudget(req: IncomingMessage): { ok: true; remaining: number } | { ok: false; retryAfterSeconds: number } {
+  const now = Date.now();
+  const key = publicClientIp(req);
+  const window = publicScanWindows.get(key);
+
+  if (!window || now - window.startedAt >= PUBLIC_SCAN_WINDOW_MS) {
+    publicScanWindows.set(key, { startedAt: now, count: 1 });
+    return { ok: true, remaining: PUBLIC_SCAN_LIMIT - 1 };
+  }
+
+  if (window.count >= PUBLIC_SCAN_LIMIT) {
+    return {
+      ok: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((PUBLIC_SCAN_WINDOW_MS - (now - window.startedAt)) / 1000)),
+    };
+  }
+
+  window.count += 1;
+  return { ok: true, remaining: PUBLIC_SCAN_LIMIT - window.count };
+}
+
+async function scanPublicToken(token: string): Promise<{ snapshot: unknown; cached: boolean }> {
+  const key = token.toLowerCase();
+  const cached = publicScanCache.get(key);
+
+  if (cached && Date.now() - cached.at < PUBLIC_SCAN_CACHE_MS) {
+    return { snapshot: cached.value, cached: true };
+  }
+
+  const after = await makeReader(token).snapshot(token);
+  const value = viewSnapshot(after, [], Date.now());
+  publicScanCache.set(key, { at: Date.now(), value });
+
+  if (publicScanCache.size > 250) {
+    const cutoff = Date.now() - PUBLIC_SCAN_CACHE_MS * 4;
+    for (const [cacheKey, entry] of publicScanCache) {
+      if (entry.at < cutoff) publicScanCache.delete(cacheKey);
+    }
+  }
+
+  return { snapshot: value, cached: false };
+}
+
 const PAGE = String.raw`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Canary v0.4 - persistent Pons V2 watchtower</title>
+<meta name="theme-color" content="#080a07">
+<meta name="description" content="Canary is a read-only Pons V2 watchtower for Robinhood Chain. Scan a token and inspect live on-chain state without a signer.">
+<title>Canary v0.4 - Robinhood Chain watchtower</title>
 <style>
 :root{
   --bg:#080a07;--panel:#0f120d;--panel2:#13170f;--line:#293023;--line2:#354027;
@@ -673,24 +730,97 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 .footer{margin:80px 0 24px;padding:24px 2px;border-top:1px solid var(--line);display:flex;justify-content:space-between;color:var(--muted);font-size:10px}.footer b{color:var(--text);font:16px Georgia,serif}
 @media(max-width:1050px){.layout,.storyHead,.memoryWrap,.safety{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}.coverage{grid-template-columns:1fr 1fr}.storyLead{margin:0}.heroMeta{grid-template-columns:1fr 1fr}.navLinks a:not(.navCta){display:none}}
 @media(max-width:700px){.hero{padding-top:48px}.heroTitle{font-size:68px}.heroCopy{font-size:15px}.heroMeta,.stats,.flow,.coverage,.signalBand,.safetyList,.liveStrip,.monitorGrid{grid-template-columns:1fr}.tools,.watchbar{flex-direction:column}.footer{display:block}.footer span{display:block;margin-top:10px}}
+
+/* v0.4 public product polish */
+.cursorGlow{
+  position:fixed;z-index:0;left:0;top:0;width:420px;height:420px;border-radius:50%;
+  pointer-events:none;background:radial-gradient(circle,rgba(183,255,0,.075),rgba(183,255,0,.018) 38%,transparent 68%);
+  filter:blur(14px);transform:translate(-999px,-999px);opacity:.9
+}
+.siteNav,.hero,.wrap,.ticker{position:relative;z-index:1}
+.heroTitle{text-shadow:0 0 42px rgba(183,255,0,.045)}
+
+.scanHero{
+  position:relative;max-width:1040px;margin:30px 0 20px;border:1px solid #3d4d25;border-radius:16px;
+  background:linear-gradient(145deg,rgba(19,24,15,.96),rgba(8,11,7,.96));
+  box-shadow:0 28px 90px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.025);overflow:hidden
+}
+.scanHero:before{
+  content:"";position:absolute;left:-25%;top:0;width:25%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--lime),transparent);
+  box-shadow:0 0 18px rgba(183,255,0,.75);animation:scanBeam 4.8s ease-in-out infinite
+}
+@keyframes scanBeam{0%,15%{left:-25%;opacity:0}30%{opacity:1}70%{opacity:.8}85%,100%{left:110%;opacity:0}}
+.scanTop{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 15px;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.12em}
+.scanTop b{color:var(--lime);font-weight:700}.scanTop span:last-child{color:#687161}
+.scanForm{display:grid;grid-template-columns:1fr auto;gap:9px;padding:14px}
+.scanForm input{height:48px;border-radius:10px;padding:0 14px;background:#070907;font-size:12px}
+.scanBtn{min-width:138px;border:0;border-radius:10px;background:var(--lime);color:#080a07;font-weight:950;cursor:pointer;padding:0 18px;transition:transform .18s ease,box-shadow .18s ease}
+.scanBtn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(183,255,0,.16)}
+.scanBtn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+.scanMsg{padding:0 15px 14px;color:var(--muted);font-size:10px;min-height:26px}
+.scanMsg.err{color:var(--red)}.scanMsg.ok{color:#9cf980}
+.scanResult{display:none;margin:0 14px 14px;border-top:1px solid var(--line);padding-top:14px}
+.scanResult.on{display:block;animation:resultIn .35s ease both}
+@keyframes resultIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.scanResultHead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.scanResultHead h3{font:30px Georgia,serif;margin:3px 0 0}
+.scanTag{color:var(--lime);border:1px solid #405519;border-radius:999px;padding:5px 8px;font-size:8px}
+.scanGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.scanCell{border:1px solid #22291d;border-radius:9px;background:#080b07;padding:10px;min-width:0}
+.scanCell b{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.scanCell span{display:block;color:#edf1e7;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scanFoot{color:#687161;font-size:9px;line-height:1.6;margin-top:10px}
+
+.ticker{overflow:hidden;border-top:1px solid rgba(183,255,0,.11);border-bottom:1px solid rgba(183,255,0,.11);background:#090c08}
+.tickerTrack{display:flex;width:max-content;gap:36px;padding:9px 0;color:#7f8977;font-size:9px;letter-spacing:.12em;text-transform:uppercase;animation:tickerMove 28s linear infinite}
+.tickerTrack b{color:var(--lime);font-weight:600}
+@keyframes tickerMove{to{transform:translateX(-50%)}}
+
+.card,.heroMetaCard,.flowStep,.coverCard,.signalCard,.memoryViz,.memoryCopy,.safetyBig,.safetyItem{
+  transition:transform .2s ease,border-color .2s ease,background .2s ease
+}
+.card:hover,.heroMetaCard:hover,.flowStep:hover,.coverCard:hover,.signalCard:hover,.safetyItem:hover{
+  transform:translateY(-2px);border-color:#405519
+}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .65s ease,transform .65s ease}
+.reveal.in{opacity:1;transform:none}
+
+@media(max-width:1050px){.scanGrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.scanGrid{grid-template-columns:1fr}.scanForm{grid-template-columns:1fr}.scanBtn{height:46px}.cursorGlow{display:none}}
+@media(prefers-reduced-motion:reduce){.scanHero:before,.tickerTrack{animation:none}.reveal{opacity:1;transform:none;transition:none}}
+
 </style>
 </head>
 <body>
+<div id="cursorGlow" class="cursorGlow"></div>
 <div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.4</a><div class="navLinks"><a href="#desk">live desk</a><a href="#how">how it works</a><a href="#signals">signals</a><a href="#memory">memory</a><a class="navCta" href="#desk">watch a token</a></div></div></div>
 
 <header class="hero" id="overview">
   <div class="eyebrow"><span class="dot"></span> live read-only monitoring for Pons V2</div>
   <h1 class="heroTitle">CAN<span>ARY</span><small>v0.4</small></h1>
-  <p class="heroCopy">A persistent watchtower for Robinhood Chain. Paste a Pons V2 token and Canary keeps reading the chain, <strong>remembers what changed between sweeps</strong>, and turns deterministic changes into QUIET, WATCH, or LEAVE.</p>
-  <div class="heroActions"><a class="btn primary" href="#desk">open live desk</a><a class="btn secondary" href="#how">see the workflow</a></div>
+  <p class="heroCopy">Paste a Pons V2 token. Canary reads the live chain without a wallet, shows the current state, and can keep a persistent memory of <strong>what changed between sweeps</strong>.</p>
+  <div class="scanHero">
+    <div class="scanTop"><b>public chain scan</b><span>Robinhood Chain / 4663 / no signer</span></div>
+    <div class="scanForm"><input id="publicScanToken" autocomplete="off" spellcheck="false" placeholder="0x... paste a Pons V2 token address"><button id="publicScanBtn" class="scanBtn">SCAN TOKEN</button></div>
+    <div id="publicScanMsg" class="scanMsg">One read-only snapshot. Nothing is signed, stored, bought, or sold.</div>
+    <div id="publicScanResult" class="scanResult"></div>
+  </div>
+  <div class="heroActions"><a class="btn primary" href="#desk">open live desk</a><a class="btn secondary" href="#how">see how it works</a><a class="btn secondary" href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">view source</a></div>
   <div class="creator">Created by <a id="creatorLink" href="https://x.com/gippp69" target="_blank" rel="noreferrer">@gippp69 on X</a></div>
   <div class="heroMeta">
     <div class="heroMetaCard"><b>READ ONLY</b>no signer or transaction path</div>
     <div class="heroMetaCard"><b>PERSISTENT MEMORY</b>snapshots survive browser restarts</div>
     <div class="heroMetaCard"><b>DETERMINISTIC</b>every alert maps to a plain source rule</div>
-    <div class="heroMetaCard"><b>LOCAL FIRST</b>board and memory stay on your machine</div>
+    <div class="heroMetaCard"><b>PUBLIC SCAN</b>one live snapshot without starting a watcher</div>
   </div>
 </header>
+
+
+<div class="ticker"><div class="tickerTrack">
+  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>NO SIGNER</b> / NO PRIVATE KEY</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
+  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>NO SIGNER</b> / NO PRIVATE KEY</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
+</div></div>
 
 <main class="wrap">
 <section id="desk">
@@ -781,6 +911,94 @@ function age(ms){if(!ms)return 'unknown';var d=Math.max(0,Date.now()-ms);if(d<10
 function short(a){if(!a)return '-';return a.length>13?a.slice(0,7)+'...'+a.slice(-4):a}
 function clock(ms){if(!ms)return '-';try{return new Date(ms).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return '-'}}
 function fmtNum(v){if(v==null||!isFinite(v))return '-';var n=Math.abs(v);if(n>=1000000)return (v/1000000).toFixed(2)+'m';if(n>=1000)return (v/1000).toFixed(2)+'k';if(n>=1)return v.toFixed(3);if(n>=0.000001)return v.toFixed(8);return v.toExponential(3)}
+
+
+function scanCell(label,value){return '<div class="scanCell"><b>'+esc(label)+'</b><span title="'+esc(value)+'">'+esc(value)+'</span></div>'}
+
+function renderPublicScan(p){
+  var market=p.phase==='POOL'?p.price:p.reserve;
+  var html='<div class="scanResultHead"><div><div class="kicker">live on-chain snapshot</div><h3>'+esc(p.symbol)+'</h3><div class="addr">'+esc(p.token)+'</div></div><span class="scanTag">READ ONLY</span></div>'+
+    '<div class="scanGrid">'+
+      scanCell('phase',p.phase)+
+      scanCell('deployer share',Number(p.dev).toFixed(2)+'%')+
+      scanCell('market state',market)+
+      scanCell('recent activity',String(p.trades))+
+      scanCell('deployer launches',String(p.deployerLaunches))+
+      scanCell('last activity',age(p.lastTradeAt)+' ago')+
+    '</div>'+
+    '<div class="scanFoot">One current snapshot, not a change verdict. Persistent QUIET / WATCH / LEAVE needs a previous state to compare against.</div>';
+
+  var box=document.getElementById('publicScanResult');
+  box.innerHTML=html;
+  box.classList.add('on')
+}
+
+async function runPublicScan(){
+  var input=document.getElementById('publicScanToken');
+  var btn=document.getElementById('publicScanBtn');
+  var msg=document.getElementById('publicScanMsg');
+  var token=input.value.trim();
+
+  if(!/^0x[a-fA-F0-9]{40}$/.test(token)){
+    msg.className='scanMsg err';
+    msg.textContent='Paste a valid 0x token address.';
+    return
+  }
+
+  btn.disabled=true;
+  msg.className='scanMsg';
+  msg.textContent='Reading Robinhood Chain...';
+
+  try{
+    var r=await fetch('/api/scan?token='+encodeURIComponent(token),{cache:'no-store'});
+    var data=await r.json();
+
+    if(!r.ok||!data.ok){
+      msg.className='scanMsg err';
+      msg.textContent=data.error||'Could not read this token.';
+      return
+    }
+
+    renderPublicScan(data.snapshot);
+    msg.className='scanMsg ok';
+    msg.textContent=data.cached?'Snapshot returned from the short safety cache.':'Live snapshot read from the chain.';
+
+    try{history.replaceState(null,'','?token='+encodeURIComponent(token)+'#overview')}catch(e){}
+  }catch(e){
+    msg.className='scanMsg err';
+    msg.textContent='Public scanner is temporarily unavailable.'
+  }finally{
+    btn.disabled=false
+  }
+}
+
+function initMotion(){
+  var glow=document.getElementById('cursorGlow');
+
+  if(glow){
+    window.addEventListener('pointermove',function(e){
+      glow.style.transform='translate('+(e.clientX-210)+'px,'+(e.clientY-210)+'px)'
+    },{passive:true})
+  }
+
+  var nodes=document.querySelectorAll('.story,.panel,.card,.heroMetaCard');
+
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(x){
+        if(x.isIntersecting){
+          x.target.classList.add('in');
+          io.unobserve(x.target)
+        }
+      })
+    },{threshold:.08});
+
+    Array.prototype.forEach.call(nodes,function(n){
+      n.classList.add('reveal');
+      io.observe(n)
+    })
+  }
+}
 
 function renderStats(){
   document.getElementById('tracked').textContent=state.stats.tracked;
@@ -926,6 +1144,10 @@ async function stopWatch(token){
   }catch(e){}
 }
 
+
+document.getElementById('publicScanBtn').addEventListener('click',runPublicScan);
+document.getElementById('publicScanToken').addEventListener('keydown',function(e){if(e.key==='Enter')runPublicScan()});
+
 document.getElementById('watchBtn').addEventListener('click',startWatch);
 document.getElementById('controlBtn').addEventListener('click',saveControlKey);
 document.getElementById('watchToken').addEventListener('keydown',function(e){if(e.key==='Enter')startWatch()});
@@ -937,6 +1159,16 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
     renderRows()
   })
 });
+
+initMotion();
+try{
+  var initialToken=new URLSearchParams(location.search).get('token');
+  if(initialToken&&/^0x[a-fA-F0-9]{40}$/.test(initialToken)){
+    document.getElementById('publicScanToken').value=initialToken;
+    setTimeout(runPublicScan,120)
+  }
+}catch(e){}
+
 load();
 setInterval(load,2000);
 })();
@@ -952,6 +1184,40 @@ const server = createServer(async (req, res) => {
   const path = (req.url ?? "/").split("?")[0] ?? "/";
 
   if (req.method === "GET" && path === "/api/state") return json(res, 200, apiState());
+
+
+  if (req.method === "GET" && path === "/api/scan") {
+    const url = new URL(req.url ?? "/", "http://canary.local");
+    const token = (url.searchParams.get("token") ?? "").trim();
+
+    if (!isAddress(token)) {
+      return json(res, 400, { ok: false, error: "not a valid EVM token address" });
+    }
+
+    const budget = takePublicScanBudget(req);
+    if (!budget.ok) {
+      res.setHeader("retry-after", String(budget.retryAfterSeconds));
+      return json(res, 429, {
+        ok: false,
+        error: "public scan limit reached; retry in " + budget.retryAfterSeconds + "s",
+      });
+    }
+
+    try {
+      const result = await scanPublicToken(token);
+      return json(res, 200, {
+        ok: true,
+        snapshot: result.snapshot,
+        cached: result.cached,
+        remaining: budget.remaining,
+      });
+    } catch {
+      return json(res, 502, {
+        ok: false,
+        error: "Canary could not read this token as a live Pons V2 position.",
+      });
+    }
+  }
 
   if (req.method === "POST" && path === "/api/watch") {
     if (!requestControlAllowed(req)) {
