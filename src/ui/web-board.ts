@@ -790,11 +790,127 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 @media(max-width:700px){.scanGrid{grid-template-columns:1fr}.scanForm{grid-template-columns:1fr}.scanBtn{height:46px}.cursorGlow{display:none}}
 @media(prefers-reduced-motion:reduce){.scanHero:before,.tickerTrack{animation:none}.reveal{opacity:1;transform:none;transition:none}}
 
+
+/* v0.4 cinematic product pass */
+:root{
+  --lime:#f4d817;
+  --lime2:#bca80b;
+  --canary:#f4d817;
+  --ink:#080806;
+  --paper:#f3f0df;
+}
+body{
+  background:
+    radial-gradient(850px 480px at 48% -180px,rgba(244,216,23,.105),transparent 62%),
+    linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px),var(--bg);
+}
+.siteNav{border-bottom-color:rgba(244,216,23,.12)}
+.navBrand strong,.eyebrow,.kicker{color:var(--canary)}
+.navCta{border-color:#6b6113!important;color:var(--canary)!important}
+.hero:after{border-color:rgba(244,216,23,.09);box-shadow:0 0 0 74px rgba(244,216,23,.015),0 0 0 148px rgba(244,216,23,.009)}
+.heroTitle span{color:var(--canary)}
+.dot,.liveDot{background:var(--canary);box-shadow:0 0 15px rgba(244,216,23,.65)}
+.btn.primary,.watchbtn,.scanBtn,.tab.on{background:var(--canary);border-color:var(--canary);color:#080806}
+.scanHero{border-color:#514b1a;background:linear-gradient(145deg,rgba(22,21,13,.96),rgba(8,9,6,.96))}
+.scanHero:before{background:linear-gradient(90deg,transparent,var(--canary),transparent);box-shadow:0 0 18px rgba(244,216,23,.72)}
+.scanTop b,.scanTag{color:var(--canary)}
+.ticker{border-color:rgba(244,216,23,.12)}
+.tickerTrack b{color:var(--canary)}
+.chartLine{stroke:var(--canary)}.chartArea{fill:rgba(244,216,23,.045)}
+.livePoint,.point{fill:var(--canary)}
+.bar i{background:var(--canary)}
+.coverIcon,.memoryCode strong,.safetyItem b{color:var(--canary)}
+.memoryNode i{background:var(--canary);box-shadow:0 0 12px rgba(244,216,23,.35)}
+
+body.publicHost .watchbar,
+body.publicHost .watchmsg,
+body.publicHost .watcherRail{display:none}
+
+.film{
+  margin:26px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:#080906;position:relative;overflow:hidden
+}
+.filmInner{max-width:1500px;margin:0 auto;padding:20px 16px 26px}
+.filmHead{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:16px}
+.filmIndex{font:13px Georgia,serif;color:var(--canary)}
+.filmTitle{font:500 clamp(32px,4vw,58px)/1 Georgia,serif;letter-spacing:-.035em;margin:4px 0 0}
+.filmMeta{text-align:right;color:var(--muted);font-size:9px;line-height:1.6}
+.filmScreen{
+  position:relative;min-height:440px;border:1px solid #343327;border-radius:14px;overflow:hidden;
+  background:
+    radial-gradient(600px 280px at 72% 45%,rgba(244,216,23,.09),transparent 70%),
+    #070806
+}
+.filmScreen:before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+  background:repeating-linear-gradient(180deg,transparent 0,transparent 3px,rgba(255,255,255,.018) 4px)
+}
+.filmTop{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-bottom:1px solid #25261f;color:#7d8376;font-size:9px}
+.filmTop b{color:var(--canary);letter-spacing:.11em}
+.filmStage{display:grid;grid-template-columns:.92fr 1.08fr;min-height:390px}
+.filmNarrative{padding:32px;border-right:1px solid #25261f;display:flex;flex-direction:column;justify-content:space-between}
+.filmBeat{font:500 clamp(32px,4vw,68px)/.95 Georgia,serif;letter-spacing:-.045em;max-width:620px}
+.filmBeat em{font-style:normal;color:var(--canary)}
+.filmSub{max-width:520px;color:#8b9284;font-size:11px;line-height:1.8}
+.filmTerminal{padding:26px 28px;font-size:11px;line-height:1.8;display:flex;flex-direction:column;justify-content:center}
+.filmLine{display:flex;gap:10px;color:#a9afa1;opacity:.46;transform:translateY(3px);transition:opacity .35s ease,transform .35s ease}
+.filmLine.on{opacity:1;transform:none}.filmLine b{min-width:72px;color:#5e6559;font-weight:500}.filmLine strong{color:#eef0e8}
+.filmLine.warn strong{color:var(--yellow)}.filmLine.leave strong{color:var(--red)}
+.filmProgress{height:2px;background:#1c1e19}.filmProgress i{display:block;height:100%;width:0;background:var(--canary)}
+.film.playing .filmProgress i{animation:filmProgress 20s linear infinite}
+@keyframes filmProgress{from{width:0}to{width:100%}}
+.filmPause{border:0;background:transparent;color:#8d9386;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:3px}
+
+.pulseBand{margin:54px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:1.3fr repeat(4,.7fr)}
+.pulseIntro,.pulseMetric{padding:22px 18px;min-height:112px}
+.pulseIntro{border-right:1px solid var(--line)}.pulseMetric{border-right:1px solid var(--line)}
+.pulseMetric:last-child{border-right:0}.pulseIntro b{font:26px Georgia,serif}.pulseIntro p{color:var(--muted);font-size:10px;line-height:1.6;margin:9px 0 0}
+.pulseMetric span{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.09em}
+.pulseMetric strong{display:block;font:28px Georgia,serif;margin-top:12px;color:var(--text)}
+.pulseMetric strong.live{color:var(--canary)}
+
+.changed{margin:92px 0 0}
+.changedGrid{display:grid;grid-template-columns:1fr 70px 1fr;gap:12px;align-items:stretch}
+.stateCard{border:1px solid var(--line);border-radius:12px;background:#0b0e09;padding:22px}
+.stateCardHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.09em}
+.stateCardHead b{color:var(--text)}
+.stateRows{display:grid;gap:0}
+.stateRow{display:grid;grid-template-columns:1fr auto;gap:20px;padding:12px 0;border-top:1px solid #21251e;font-size:10px}
+.stateRow span{color:var(--muted)}.stateRow strong{font-weight:600}.stateRow.changedVal strong{color:var(--canary)}
+.changeArrow{display:flex;align-items:center;justify-content:center;color:var(--canary);font-size:28px}
+.changedCallout{margin-top:12px;border-left:2px solid var(--canary);padding:14px 16px;background:rgba(244,216,23,.025);color:#aab0a2;font-size:10px;line-height:1.7}
+.changedCallout b{color:var(--text)}
+
+.refusals{display:grid;grid-template-columns:.75fr 1.25fr;gap:30px;margin-top:26px}
+.refusalLead{font:500 clamp(30px,3.3vw,48px)/1.02 Georgia,serif;letter-spacing:-.03em}
+.refusalList{border-top:1px solid var(--line)}
+.refusalRow{display:grid;grid-template-columns:180px 1fr;gap:18px;padding:15px 0;border-bottom:1px solid var(--line);font-size:10px}
+.refusalRow code{color:var(--red)}.refusalRow span{color:#9aa292;line-height:1.6}
+
+.adminControl{display:none!important}
+.siteNavInner{max-width:1500px}
+.navLinks a{letter-spacing:.02em}
+.footerDomain{color:var(--canary)}
+
+@media(max-width:1000px){
+  .filmStage,.refusals{grid-template-columns:1fr}
+  .filmNarrative{border-right:0;border-bottom:1px solid #25261f;min-height:300px}
+  .pulseBand{grid-template-columns:1fr 1fr}.pulseIntro{grid-column:1/-1}
+  .changedGrid{grid-template-columns:1fr}.changeArrow{transform:rotate(90deg);min-height:45px}
+}
+@media(max-width:650px){
+  .filmHead{display:block}.filmMeta{text-align:left;margin-top:10px}
+  .filmNarrative,.filmTerminal{padding:20px}.filmScreen{min-height:0}
+  .pulseBand{grid-template-columns:1fr}.pulseIntro{grid-column:auto}.pulseIntro,.pulseMetric{border-right:0;border-bottom:1px solid var(--line)}
+  .refusalRow{grid-template-columns:1fr;gap:5px}
+}
+
 </style>
 </head>
 <body>
 <div id="cursorGlow" class="cursorGlow"></div>
-<div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.4</a><div class="navLinks"><a href="#desk">live desk</a><a href="#how">how it works</a><a href="#signals">signals</a><a href="#memory">memory</a><a class="navCta" href="#desk">watch a token</a></div></div></div>
+<div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.4</a><div class="navLinks"><a href="#overview">scan</a><a href="#film">film</a><a href="#desk">live desk</a><a href="#how">how</a><a href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">github</a><a class="navCta" href="#overview">scan a token</a></div></div></div>
 
 <header class="hero" id="overview">
   <div class="eyebrow"><span class="dot"></span> live read-only monitoring for Pons V2</div>
@@ -822,6 +938,34 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
   <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>NO SIGNER</b> / NO PRIVATE KEY</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
 </div></div>
 
+
+<section class="film playing" id="film">
+  <div class="filmInner">
+    <div class="filmHead">
+      <div><div class="filmIndex">00 / twenty seconds</div><h2 class="filmTitle">one sweep becomes a memory.</h2></div>
+      <div class="filmMeta">product sequence / no token required<br><button id="filmPause" class="filmPause" type="button">click to pause</button></div>
+    </div>
+    <div class="filmScreen">
+      <div class="filmTop"><b>CANARY / READ-ONLY WATCHTOWER</b><span id="filmClock">00:00 / 00:20</span></div>
+      <div class="filmStage">
+        <div class="filmNarrative">
+          <div id="filmBeat" class="filmBeat">read the chain.<br><em>save the state.</em></div>
+          <div id="filmSub" class="filmSub">Canary starts with one current snapshot. No signer, no wallet prompt, no transaction path.</div>
+        </div>
+        <div class="filmTerminal" id="filmTerminal">
+          <div class="filmLine on"><b>00:00</b><strong>RPC / chain 4663 / block acquired</strong></div>
+          <div class="filmLine"><b>00:04</b><strong>snapshot / deployer / market / activity / fees</strong></div>
+          <div class="filmLine"><b>00:08</b><strong>memory / previous state loaded</strong></div>
+          <div class="filmLine warn"><b>00:12</b><strong>delta / pool price moved beyond threshold</strong></div>
+          <div class="filmLine"><b>00:16</b><strong>reason / before -> after stored beside signal</strong></div>
+          <div class="filmLine"><b>00:20</b><strong>next sweep / memory compounds</strong></div>
+        </div>
+      </div>
+      <div class="filmProgress"><i></i></div>
+    </div>
+  </div>
+</section>
+
 <main class="wrap">
 <section id="desk">
   <div class="top"><div><div class="brand">Canary v0.4 live desk</div><div class="sub">Pons V2 / Robinhood Chain 4663 / persistent read-only watchtower</div></div><span class="pill">READ ONLY</span><div class="spacer"></div><div id="heartbeat" class="heartbeat">loading local state...</div></div>
@@ -835,10 +979,19 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
     <div class="card"><div id="rpcBlock" class="num">-</div><div class="label">Robinhood Chain block</div></div>
   </div>
 
+
+  <div class="pulseBand" id="pulseBand">
+    <div class="pulseIntro"><b>the pulse</b><p>Only values Canary can actually read or remember. No manufactured score and no market promises.</p></div>
+    <div class="pulseMetric"><span>rpc</span><strong id="pulseRpc" class="live">probing</strong></div>
+    <div class="pulseMetric"><span>chain block</span><strong id="pulseBlock">-</strong></div>
+    <div class="pulseMetric"><span>snapshots</span><strong id="pulseSamples">0</strong></div>
+    <div class="pulseMetric"><span>remembered</span><strong id="pulseTracked">0</strong></div>
+  </div>
+
   <div class="layout">
     <section class="panel">
       <h2>positions remembered by Canary</h2>
-      <div class="watchbar"><input id="watchToken" autocomplete="off" spellcheck="false" placeholder="paste a Pons V2 token address"><button id="watchBtn" class="watchbtn">WATCH TOKEN</button><button id="controlBtn" class="tab" type="button">CONTROL KEY</button></div>
+      <div class="watchbar"><input id="watchToken" autocomplete="off" spellcheck="false" placeholder="paste a Pons V2 token address"><button id="watchBtn" class="watchbtn">WATCH TOKEN</button><button id="controlBtn" class="tab adminControl" type="button">CONTROL KEY</button></div>
       <div id="watchMsg" class="watchmsg">Starts a local read-only watcher. No signer. No transaction path.</div>
       <div id="watcherRail" class="watcherRail"></div>
       <div class="tools"><input id="search" placeholder="search symbol / token / deployer"><div class="tabs"><button class="tab on" data-filter="ALL">all</button><button class="tab" data-filter="WATCH">watch</button><button class="tab" data-filter="LEAVE">leave</button></div></div>
@@ -849,8 +1002,40 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
   </div>
 </section>
 
+
+<section class="changed" id="changed">
+  <div class="storyHead">
+    <div><div class="kicker">02 / what changed</div><h2 class="storyTitle">the useful part is the delta.</h2></div>
+    <p class="storyLead">A single chart tells you what exists now. Canary is built around the comparison: what moved, by how much, and which plain rule noticed it.</p>
+  </div>
+  <div class="changedGrid">
+    <div class="stateCard">
+      <div class="stateCardHead"><b>previous sweep</b><span>illustrative sequence</span></div>
+      <div class="stateRows">
+        <div class="stateRow"><span>phase</span><strong>POOL</strong></div>
+        <div class="stateRow"><span>deployer share</span><strong>4.80%</strong></div>
+        <div class="stateRow"><span>pool price</span><strong>0.000124</strong></div>
+        <div class="stateRow"><span>recent swaps</span><strong>14</strong></div>
+        <div class="stateRow"><span>token fees</span><strong>0.00</strong></div>
+      </div>
+    </div>
+    <div class="changeArrow">→</div>
+    <div class="stateCard">
+      <div class="stateCardHead"><b>current sweep</b><span>same fields</span></div>
+      <div class="stateRows">
+        <div class="stateRow"><span>phase</span><strong>POOL</strong></div>
+        <div class="stateRow"><span>deployer share</span><strong>4.80%</strong></div>
+        <div class="stateRow changedVal"><span>pool price</span><strong>0.000091</strong></div>
+        <div class="stateRow changedVal"><span>recent swaps</span><strong>37</strong></div>
+        <div class="stateRow changedVal"><span>token fees</span><strong>12.40</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="changedCallout"><b>why this matters:</b> the example is deliberately labeled illustrative. On a real watched position Canary fills this surface from stored sweeps and keeps the before → after values beside the rule that fired.</div>
+</section>
+
 <section class="story" id="how">
-  <div class="storyHead"><div><div class="kicker">01 / workflow</div><h2 class="storyTitle">one token becomes a state timeline</h2></div><p class="storyLead">Canary never trades. It reads the chain, saves a snapshot, compares it with the previous state, explains any deterministic delta, and keeps the result for the next sweep.</p></div>
+  <div class="storyHead"><div><div class="kicker">03 / workflow</div><h2 class="storyTitle">one token becomes a state timeline</h2></div><p class="storyLead">Canary never trades. It reads the chain, saves a snapshot, compares it with the previous state, explains any deterministic delta, and keeps the result for the next sweep.</p></div>
   <div class="flow">
     <div class="flowStep"><div class="flowNo">01</div><h3>paste CA</h3><p>Start a local watcher directly from the board.</p></div>
     <div class="flowStep"><div class="flowNo">02</div><h3>read chain</h3><p>Read deployer, phase, reserve or pool state, swaps, fees and activity.</p></div>
@@ -861,7 +1046,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 </section>
 
 <section class="story">
-  <div class="storyHead"><div><div class="kicker">02 / coverage</div><h2 class="storyTitle">what the desk actually tracks</h2></div><p class="storyLead">Each token is a stateful position with deployer context, market activity, fee movement and Pons V2 phase information attached to it.</p></div>
+  <div class="storyHead"><div><div class="kicker">04 / coverage</div><h2 class="storyTitle">what the desk actually tracks</h2></div><p class="storyLead">Each token is a stateful position with deployer context, market activity, fee movement and Pons V2 phase information attached to it.</p></div>
   <div class="coverage">
     <div class="coverCard"><div class="coverIcon">D</div><h3>deployer share</h3><p>Tracks deployer balance across sweeps and records material drops.</p></div>
     <div class="coverCard"><div class="coverIcon">L</div><h3>reserve and liquidity</h3><p>Reads curve quote reserve before graduation and pool state after graduation.</p></div>
@@ -873,7 +1058,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 </section>
 
 <section class="story" id="signals">
-  <div class="storyHead"><div><div class="kicker">03 / deterministic signals</div><h2 class="storyTitle">three states, with the reason beside them</h2></div><p class="storyLead">There is no hidden score. The board keeps the final surface small and every signal points back to a plain rule.</p></div>
+  <div class="storyHead"><div><div class="kicker">05 / deterministic signals</div><h2 class="storyTitle">three states, with the reason beside them</h2></div><p class="storyLead">There is no hidden score. The board keeps the final surface small and every signal points back to a plain rule.</p></div>
   <div class="signalBand">
     <div class="signalCard"><div class="signalName QUIET">QUIET</div><p>No configured threshold crossed on the latest comparison. State is still recorded and memory keeps growing.</p></div>
     <div class="signalCard"><div class="signalName WATCH">WATCH</div><p>A deterministic condition deserves inspection, such as stale activity, fee movement or a serial deployer threshold.</p></div>
@@ -882,7 +1067,7 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 </section>
 
 <section class="story" id="memory">
-  <div class="storyHead"><div><div class="kicker">04 / persistent memory</div><h2 class="storyTitle">the chart remembers the previous state</h2></div><p class="storyLead">A fresh chart tells you what exists now. Canary is built around what changed one sweep ago, then keeps stacking those observations into live history.</p></div>
+  <div class="storyHead"><div><div class="kicker">06 / persistent memory</div><h2 class="storyTitle">the chart remembers the previous state</h2></div><p class="storyLead">A fresh chart tells you what exists now. Canary is built around what changed one sweep ago, then keeps stacking those observations into live history.</p></div>
   <div class="memoryWrap">
     <div class="memoryViz">
       <div class="memoryNode"><i></i><div><b>sweep arrives</b><span>live on-chain state becomes a normalized snapshot</span></div></div>
@@ -895,11 +1080,28 @@ tbody tr{cursor:pointer}tbody tr:hover,tbody tr.sel{background:#171c12}
 </section>
 
 <section class="story">
-  <div class="storyHead"><div><div class="kicker">05 / trust boundary</div><h2 class="storyTitle">useful because it cannot spend</h2></div><p class="storyLead">The read-only boundary is part of the product. Canary observes and explains state while execution remains somewhere else.</p></div>
+  <div class="storyHead"><div><div class="kicker">07 / trust boundary</div><h2 class="storyTitle">useful because it cannot spend</h2></div><p class="storyLead">The read-only boundary is part of the product. Canary observes and explains state while execution remains somewhere else.</p></div>
   <div class="safety"><div class="safetyBig"><h3>no transaction path.</h3><p>No wallet client, no imported account, no private key flow and no automatic exit hiding behind the dashboard. WATCH TOKEN only starts another read-only process.</p></div><div class="safetyList"><div class="safetyItem"><b>NO SIGNER</b><span>public client reads only</span></div><div class="safetyItem"><b>NO KEY</b><span>signing material is refused</span></div><div class="safetyItem"><b>NO BUY BUTTON</b><span>signals are context, not orders</span></div><div class="safetyItem"><b>PLAIN RULES</b><span>thresholds live in source</span></div></div></div>
 </section>
 
-<div class="footer"><b>Canary v0.4</b><span>Robinhood Chain / Pons V2 / persistent read-only watchtower / created by <span id="footerCreator">@gippp69</span></span></div>
+
+<section class="story" id="refusals">
+  <div class="storyHead">
+    <div><div class="kicker">08 / refusals</div><h2 class="storyTitle">what Canary refuses to become.</h2></div>
+    <p class="storyLead">The boundary is visible on purpose. If a feature needs a signer, a private key, or a guessed number, it does not belong in this watchtower.</p>
+  </div>
+  <div class="refusals">
+    <div class="refusalLead">useful because some paths simply do not exist.</div>
+    <div class="refusalList">
+      <div class="refusalRow"><code>sign transaction</code><span>refused — Canary has no signer and no execution path.</span></div>
+      <div class="refusalRow"><code>import private key</code><span>refused — there is nowhere in the product to store signing material.</span></div>
+      <div class="refusalRow"><code>invent a signal</code><span>refused — a WATCH or LEAVE state must map to a configured deterministic rule.</span></div>
+      <div class="refusalRow"><code>judge one snapshot</code><span>refused — change signals need a remembered previous state, not a story around one number.</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="footer"><b>Canary v0.4</b><span><span class="footerDomain">usecanary.watch</span> / Robinhood Chain / Pons V2 / read-only watchtower / created by <span id="footerCreator">@gippp69</span></span></div>
 </main>
 
 <script>
@@ -1000,6 +1202,59 @@ function initMotion(){
   }
 }
 
+
+var filmTimer=null,filmStartedAt=0,filmPausedAt=0,filmPaused=false;
+
+function initPublicHost(){
+  var h=location.hostname;
+  if(h!=='127.0.0.1'&&h!=='localhost'&&h!=='::1')document.body.classList.add('publicHost')
+}
+
+function filmFrame(){
+  if(filmPaused)return;
+  var elapsed=((Date.now()-filmStartedAt)%20000);
+  var second=Math.floor(elapsed/1000);
+  var stage=Math.min(5,Math.floor(elapsed/4000));
+  var lines=document.querySelectorAll('#filmTerminal .filmLine');
+  Array.prototype.forEach.call(lines,function(line,i){line.classList.toggle('on',i<=stage)});
+  var beats=[
+    ['read the chain.<br><em>save the state.</em>','Canary starts with one current snapshot. No signer, no wallet prompt, no transaction path.'],
+    ['same fields.<br><em>next sweep.</em>','The next read is normalized into the same shape so the comparison is mechanical, not interpretive.'],
+    ['memory loads.<br><em>before meets after.</em>','The previous state becomes the baseline. Nothing useful is lost when the browser refreshes.'],
+    ['a threshold moves.<br><em>the reason stays.</em>','A configured condition crosses its line. The signal carries the exact before and after values.'],
+    ['one event.<br><em>inside a timeline.</em>','The board keeps the change beside the history that produced it instead of turning it into a mystery score.'],
+    ['then it waits.<br><em>and reads again.</em>','No trade is placed. Canary returns to observation and lets the next sweep add another piece of memory.']
+  ];
+  var beat=document.getElementById('filmBeat'),sub=document.getElementById('filmSub'),clock=document.getElementById('filmClock');
+  if(beat)beat.innerHTML=beats[stage][0];
+  if(sub)sub.textContent=beats[stage][1];
+  if(clock)clock.textContent='00:'+String(second).padStart(2,'0')+' / 00:20';
+}
+
+function initFilm(){
+  var film=document.getElementById('film'),btn=document.getElementById('filmPause');
+  if(!film||!btn)return;
+  filmStartedAt=Date.now();
+  filmTimer=setInterval(filmFrame,250);
+  filmFrame();
+  btn.addEventListener('click',function(){
+    if(!filmPaused){
+      filmPaused=true;filmPausedAt=Date.now();film.classList.remove('playing');btn.textContent='click to play'
+    }else{
+      filmStartedAt+=Date.now()-filmPausedAt;filmPaused=false;film.classList.add('playing');btn.textContent='click to pause';filmFrame()
+    }
+  })
+}
+
+function renderPulse(){
+  if(!state)return;
+  var rpc=document.getElementById('pulseRpc'),block=document.getElementById('pulseBlock'),samples=document.getElementById('pulseSamples'),tracked=document.getElementById('pulseTracked');
+  if(rpc)rpc.textContent=state.rpc&&state.rpc.status==='ok'?'live':'offline';
+  if(block)block.textContent=state.rpc&&state.rpc.block?Number(state.rpc.block).toLocaleString():'-';
+  if(samples)samples.textContent=String(state.stats.samples);
+  if(tracked)tracked.textContent=String(state.stats.tracked)
+}
+
 function renderStats(){
   document.getElementById('tracked').textContent=state.stats.tracked;
   document.getElementById('active').textContent=state.stats.activeWatchers;
@@ -1088,6 +1343,7 @@ function renderWatchers(){
 }
 function render(){
   renderStats();
+  renderPulse();
   renderWatchers();
   renderRows();
   renderDetail();
@@ -1149,7 +1405,7 @@ document.getElementById('publicScanBtn').addEventListener('click',runPublicScan)
 document.getElementById('publicScanToken').addEventListener('keydown',function(e){if(e.key==='Enter')runPublicScan()});
 
 document.getElementById('watchBtn').addEventListener('click',startWatch);
-document.getElementById('controlBtn').addEventListener('click',saveControlKey);
+var controlBtn=document.getElementById('controlBtn');if(controlBtn)controlBtn.addEventListener('click',saveControlKey);
 document.getElementById('watchToken').addEventListener('keydown',function(e){if(e.key==='Enter')startWatch()});
 document.getElementById('search').addEventListener('input',renderRows);
 Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
@@ -1160,6 +1416,8 @@ Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b){
   })
 });
 
+initPublicHost();
+initFilm();
 initMotion();
 try{
   var initialToken=new URLSearchParams(location.search).get('token');
