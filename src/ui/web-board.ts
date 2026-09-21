@@ -906,30 +906,424 @@ body.publicHost .watcherRail{display:none}
   .refusalRow{grid-template-columns:1fr;gap:5px}
 }
 
+
+
+/* CANARY_SITE_POLISH_V4 */
+:root{
+  --canary:#f4d817;
+  --canary2:#ffe94d;
+  --deep:#070806;
+  --deep2:#0b0d09;
+}
+
+body{
+  background:
+    radial-gradient(900px 460px at 50% -170px,rgba(244,216,23,.11),transparent 66%),
+    linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px),
+    var(--bg);
+}
+
+/* stronger hero */
+.hero.polishHero{padding-top:46px}
+.hero.polishHero .heroTitle{
+  font-size:clamp(92px,15vw,220px);
+  line-height:.74;
+  letter-spacing:-.085em;
+  margin-top:26px
+}
+.hero.polishHero .heroTitle span{color:var(--canary)}
+.heroStatement{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:42px;
+  align-items:end;
+  margin:34px 0 28px;
+  padding-top:22px;
+  border-top:1px solid var(--line)
+}
+.heroStatement h2{
+  margin:0;
+  max-width:780px;
+  font:500 clamp(34px,4.8vw,72px)/.95 Georgia,serif;
+  letter-spacing:-.045em
+}
+.heroStatement h2 em{font-style:normal;color:var(--canary)}
+.heroStatement p{
+  margin:0 0 4px auto;
+  max-width:620px;
+  color:#9aa293;
+  line-height:1.8;
+  font-size:12px
+}
+
+.heroLive{
+  display:grid;
+  grid-template-columns:1.2fr repeat(4,.7fr);
+  border:1px solid #353429;
+  border-radius:12px;
+  overflow:hidden;
+  background:#090a07;
+  margin:18px 0 16px
+}
+.heroLiveIntro,.heroLiveCell{padding:13px 14px;border-right:1px solid #292a22}
+.heroLiveCell:last-child{border-right:0}
+.heroLiveIntro{color:#8b9285;font-size:9px;line-height:1.6}
+.heroLiveIntro b{display:block;color:var(--canary);font-size:10px;letter-spacing:.09em;margin-bottom:3px}
+.heroLiveCell span{display:block;color:#70776b;font-size:8px;text-transform:uppercase;letter-spacing:.09em}
+.heroLiveCell strong{display:block;color:#f1f2eb;font:19px Georgia,serif;margin-top:5px}
+.heroLiveCell strong.live{color:var(--canary)}
+
+.scanSequence{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  padding:0 14px 14px
+}
+.scanStage{
+  position:relative;
+  border:1px solid #25271f;
+  border-radius:8px;
+  padding:8px 9px;
+  color:#61685d;
+  font-size:8px;
+  text-transform:uppercase;
+  letter-spacing:.06em
+}
+.scanStage:before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:2px;
+  background:#33362e
+}
+.scanStage.active{color:#f2f3ec;border-color:#6b6217;background:rgba(244,216,23,.035)}
+.scanStage.active:before{background:var(--canary);box-shadow:0 0 12px rgba(244,216,23,.65)}
+.scanStage.done{color:#aab29f}
+.scanStage.done:before{background:#64741d}
+
+/* flight recorder */
+.flightRecorder{margin:92px 0 0}
+.flightShell{
+  border:1px solid #343328;
+  border-radius:14px;
+  overflow:hidden;
+  background:
+    radial-gradient(700px 340px at 85% 10%,rgba(244,216,23,.055),transparent 64%),
+    #080906
+}
+.flightTop{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  padding:12px 14px;
+  border-bottom:1px solid #292a23;
+  color:#70776b;
+  font-size:9px
+}
+.flightTop b{color:var(--canary);letter-spacing:.1em}
+.flightRows{padding:0 20px}
+.flightRow{
+  display:grid;
+  grid-template-columns:76px 110px 1fr auto;
+  gap:18px;
+  align-items:center;
+  min-height:62px;
+  border-bottom:1px solid #20231d;
+  font-size:10px
+}
+.flightRow:last-child{border-bottom:0}
+.flightTime{color:#656d61}
+.flightKind{font-weight:800;letter-spacing:.04em}
+.flightReason{color:#b5bcad;line-height:1.5}
+.flightDelta{color:#737b6f;text-align:right}
+.flightRow.WATCH .flightKind{color:var(--yellow)}
+.flightRow.LEAVE .flightKind{color:var(--red)}
+.flightRow.QUIET .flightKind,.flightRow.INFO .flightKind{color:#93dd70}
+.flightEmpty{padding:30px 20px;color:#737b6f;line-height:1.7}
+.flightMetrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border-top:1px solid #292a23
+}
+.flightMetric{padding:15px;border-right:1px solid #292a23}
+.flightMetric:last-child{border-right:0}
+.flightMetric b{display:block;color:#6e7569;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.flightMetric span{display:block;font:20px Georgia,serif;margin-top:6px}
+
+/* embedded terminal */
+.siteTerminal{margin:92px 0 0}
+.terminalShell{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #3a392d;
+  border-radius:14px;
+  background:#050605;
+  box-shadow:0 28px 90px rgba(0,0,0,.34)
+}
+.terminalShell:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.14;
+  background:repeating-linear-gradient(180deg,transparent 0,transparent 3px,rgba(255,255,255,.018) 4px)
+}
+.termBar{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 13px;
+  border-bottom:1px solid #282920;
+  color:#72796d;
+  font-size:9px
+}
+.termBar b{color:var(--canary);letter-spacing:.1em}
+.termHero{
+  padding:24px 18px 18px;
+  text-align:center;
+  border-bottom:1px solid #282920
+}
+.termLogo{
+  font:700 clamp(48px,8vw,104px)/.8 Georgia,serif;
+  letter-spacing:-.065em;
+  color:var(--canary);
+  text-shadow:0 0 30px rgba(244,216,23,.08)
+}
+.termSub{
+  margin-top:14px;
+  color:#6f7669;
+  font-size:9px;
+  letter-spacing:.08em;
+  text-transform:uppercase
+}
+.termBeam{
+  max-width:720px;
+  height:2px;
+  margin:17px auto 0;
+  background:#1d2019;
+  overflow:hidden;
+  position:relative
+}
+.termBeam i{
+  position:absolute;
+  top:0;bottom:0;
+  width:100px;
+  background:linear-gradient(90deg,transparent,var(--canary),transparent);
+  animation:canaryBeam 3.2s linear infinite
+}
+@keyframes canaryBeam{from{left:-110px}to{left:100%}}
+.termDeck{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border-bottom:1px solid #282920
+}
+.termCard{
+  min-height:150px;
+  padding:18px;
+  border-right:1px solid #282920
+}
+.termCard:last-child{border-right:0}
+.termCardHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px
+}
+.termCardHead b{font-size:12px}
+.termState{font-size:9px;font-weight:800}
+.termState.QUIET{color:#93dd70}
+.termState.WATCH{color:var(--yellow)}
+.termState.LEAVE{color:var(--red)}
+.termState.SNAPSHOT{color:var(--cyan)}
+.termKV{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  padding:6px 0;
+  border-top:1px solid #1e211b;
+  font-size:9px
+}
+.termKV span{color:#687064}
+.termKV strong{color:#cfd4ca;font-weight:500}
+.termIdle{
+  grid-column:1/-1;
+  padding:44px;
+  text-align:center;
+  color:#697165;
+  line-height:1.8
+}
+.termFeed{padding:12px 15px 16px}
+.termFeedLine{
+  display:grid;
+  grid-template-columns:70px 1fr auto;
+  gap:12px;
+  padding:6px 0;
+  color:#8c9486;
+  font-size:9px
+}
+.termFeedLine b{color:#cfd4ca}
+.termFeedLine span:last-child{color:#656d61}
+
+/* remembered fields */
+.rememberStrip{margin:92px 0 0}
+.rememberGrid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line)
+}
+.rememberItem{
+  min-height:150px;
+  padding:18px 14px;
+  border-right:1px solid var(--line)
+}
+.rememberItem:last-child{border-right:0}
+.rememberItem b{
+  display:block;
+  font:19px Georgia,serif;
+  margin:22px 0 7px
+}
+.rememberItem span{
+  color:#7d8578;
+  font-size:9px;
+  line-height:1.6
+}
+.microMove{height:26px;display:flex;align-items:end;gap:3px}
+.microMove i{
+  display:block;
+  flex:1;
+  background:#30342b;
+  animation:microPulse 2.6s ease-in-out infinite
+}
+.microMove i:nth-child(2){animation-delay:.2s}
+.microMove i:nth-child(3){animation-delay:.4s}
+.microMove i:nth-child(4){animation-delay:.6s}
+.microMove i:nth-child(5){animation-delay:.8s}
+@keyframes microPulse{
+  0%,100%{height:20%}
+  50%{height:88%;background:#6b6418}
+}
+
+/* stronger states */
+.signalBand .signalCard{min-height:235px;position:relative;overflow:hidden}
+.signalBand .signalName{
+  font-size:clamp(34px,4vw,58px);
+  letter-spacing:-.04em
+}
+
+/* stronger refusal ending */
+#refusals .storyTitle{
+  font-size:clamp(42px,5vw,78px);
+  line-height:.92
+}
+
+/* footer scale */
+.megaFooter{
+  margin:110px -16px 0;
+  border-top:1px solid var(--line);
+  overflow:hidden;
+  background:#070806
+}
+.megaFooterInner{max-width:1500px;margin:0 auto;padding:28px 16px 20px}
+.footerLinks{
+  display:flex;
+  justify-content:space-between;
+  gap:24px;
+  align-items:center;
+  color:#8b9385;
+  font-size:10px
+}
+.footerLinks a{text-decoration:none}
+.footerLinks a:hover{color:var(--canary)}
+.footerGhost{
+  font:700 clamp(100px,18vw,280px)/.74 Georgia,serif;
+  letter-spacing:-.09em;
+  color:#11130e;
+  white-space:nowrap;
+  text-align:center;
+  transform:translateY(16px);
+  user-select:none
+}
+.footerBottom{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  padding-top:12px;
+  border-top:1px solid #20231d;
+  color:#5f675c;
+  font-size:9px
+}
+.footerBottom b{color:var(--canary)}
+
+@media(max-width:1000px){
+  .heroStatement{grid-template-columns:1fr}
+  .heroStatement p{margin-left:0}
+  .heroLive{grid-template-columns:1fr 1fr}
+  .heroLiveIntro{grid-column:1/-1}
+  .flightRow{grid-template-columns:70px 90px 1fr}
+  .flightDelta{display:none}
+  .termDeck{grid-template-columns:1fr}
+  .termCard{border-right:0;border-bottom:1px solid #282920}
+  .rememberGrid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:650px){
+  .hero.polishHero .heroTitle{font-size:clamp(74px,25vw,120px)}
+  .scanSequence{grid-template-columns:1fr 1fr}
+  .heroLive{grid-template-columns:1fr}
+  .heroLiveIntro{grid-column:auto}
+  .heroLiveIntro,.heroLiveCell{border-right:0;border-bottom:1px solid #292a22}
+  .flightRow{grid-template-columns:70px 1fr;gap:8px}
+  .flightReason{grid-column:1/-1;padding-bottom:10px}
+  .flightMetrics{grid-template-columns:1fr 1fr}
+  .rememberGrid{grid-template-columns:1fr 1fr}
+  .footerLinks,.footerBottom{display:block}
+  .footerLinks span,.footerLinks a{display:block;margin:8px 0}
+}
+
 </style>
 </head>
 <body>
 <div id="cursorGlow" class="cursorGlow"></div>
 <div class="siteNav"><div class="siteNavInner"><a class="navBrand" href="#overview"><strong>C</strong>Canary v0.4</a><div class="navLinks"><a href="#overview">scan</a><a href="#film">film</a><a href="#desk">live desk</a><a href="#how">how</a><a href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">github</a><a class="navCta" href="#overview">scan a token</a></div></div></div>
 
-<header class="hero" id="overview">
-  <div class="eyebrow"><span class="dot"></span> live read-only monitoring for Pons V2</div>
+<header class="hero polishHero" id="overview">
+  <div class="eyebrow"><span class="dot"></span> live watchtower / Robinhood Chain 4663</div>
   <h1 class="heroTitle">CAN<span>ARY</span><small>v0.4</small></h1>
-  <p class="heroCopy">Paste a Pons V2 token. Canary reads the live chain without a wallet, shows the current state, and can keep a persistent memory of <strong>what changed between sweeps</strong>.</p>
+
+  <div class="heroStatement">
+    <h2>the chart forgets.<br><em>canary doesn't.</em></h2>
+    <p>One snapshot tells you what exists now. Canary keeps the state before it, compares the next sweep against it, and leaves the reason beside every deterministic signal.</p>
+  </div>
+
+  <div class="heroLive">
+    <div class="heroLiveIntro"><b>WATCHTOWER ONLINE</b>usecanary.watch / public scan + persistent local memory</div>
+    <div class="heroLiveCell"><span>rpc</span><strong id="heroRpc" class="live">probing</strong></div>
+    <div class="heroLiveCell"><span>chain block</span><strong id="heroBlock">-</strong></div>
+    <div class="heroLiveCell"><span>snapshots</span><strong id="heroSamples">0</strong></div>
+    <div class="heroLiveCell"><span>remembered</span><strong id="heroTracked">0</strong></div>
+  </div>
+
   <div class="scanHero">
-    <div class="scanTop"><b>public chain scan</b><span>Robinhood Chain / 4663 / no signer</span></div>
+    <div class="scanTop"><b>public chain scan</b><span>one token / one live read / zero execution</span></div>
     <div class="scanForm"><input id="publicScanToken" autocomplete="off" spellcheck="false" placeholder="0x... paste a Pons V2 token address"><button id="publicScanBtn" class="scanBtn">SCAN TOKEN</button></div>
-    <div id="publicScanMsg" class="scanMsg">One read-only snapshot. Nothing is signed, stored, bought, or sold.</div>
+    <div class="scanSequence" id="scanStages">
+      <div class="scanStage active">01 / validate launch</div>
+      <div class="scanStage">02 / read state</div>
+      <div class="scanStage">03 / normalize</div>
+      <div class="scanStage">04 / snapshot</div>
+    </div>
+    <div id="publicScanMsg" class="scanMsg">A current snapshot is not a change verdict. Persistent signals need memory.</div>
     <div id="publicScanResult" class="scanResult"></div>
   </div>
-  <div class="heroActions"><a class="btn primary" href="#desk">open live desk</a><a class="btn secondary" href="#how">see how it works</a><a class="btn secondary" href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">view source</a></div>
-  <div class="creator">Created by <a id="creatorLink" href="https://x.com/gippp69" target="_blank" rel="noreferrer">@gippp69 on X</a></div>
-  <div class="heroMeta">
-    <div class="heroMetaCard"><b>READ ONLY</b>no signer or transaction path</div>
-    <div class="heroMetaCard"><b>PERSISTENT MEMORY</b>snapshots survive browser restarts</div>
-    <div class="heroMetaCard"><b>DETERMINISTIC</b>every alert maps to a plain source rule</div>
-    <div class="heroMetaCard"><b>PUBLIC SCAN</b>one live snapshot without starting a watcher</div>
+
+  <div class="heroActions">
+    <a class="btn primary" href="#recorder">flight recorder</a>
+    <a class="btn secondary" href="#terminal">sentinel grid</a>
+    <a class="btn secondary" href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">view source</a>
   </div>
+  <div class="creator">Created by <a id="creatorLink" href="https://x.com/gippp69" target="_blank" rel="noreferrer">@gippp69 on X</a></div>
 </header>
 
 
@@ -1002,6 +1396,56 @@ body.publicHost .watcherRail{display:none}
   </div>
 </section>
 
+
+
+<section class="flightRecorder" id="recorder">
+  <div class="storyHead">
+    <div><div class="kicker">03 / flight recorder</div><h2 class="storyTitle">every sweep leaves a receipt.</h2></div>
+    <p class="storyLead">The useful object is not one chart. It is the sequence: what Canary saw, what changed, which rule noticed it, and what the previous state looked like.</p>
+  </div>
+  <div class="flightShell">
+    <div class="flightTop"><b>CANARY / FLIGHT RECORDER</b><span id="flightStatus">waiting for state</span></div>
+    <div id="flightRows" class="flightRows"><div class="flightEmpty">loading remembered state...</div></div>
+    <div class="flightMetrics">
+      <div class="flightMetric"><b>rpc</b><span id="flightRpc">-</span></div>
+      <div class="flightMetric"><b>block</b><span id="flightBlock">-</span></div>
+      <div class="flightMetric"><b>samples</b><span id="flightSamples">0</span></div>
+      <div class="flightMetric"><b>watchers</b><span id="flightWatchers">0</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="siteTerminal" id="terminal">
+  <div class="storyHead">
+    <div><div class="kicker">04 / sentinel grid</div><h2 class="storyTitle">the watchtower, moving on one screen.</h2></div>
+    <p class="storyLead">Remembered positions become a compact live surface. A token you scan can also appear here immediately as a current snapshot.</p>
+  </div>
+  <div class="terminalShell">
+    <div class="termBar"><b>CANARY // SENTINEL GRID</b><span id="termMeta">Robinhood Chain 4663 / read only</span></div>
+    <div class="termHero">
+      <div class="termLogo">CANARY</div>
+      <div class="termSub">observe → remember → compare → signal → sweep again</div>
+      <div class="termBeam"><i></i></div>
+    </div>
+    <div id="termDeck" class="termDeck"><div class="termIdle">waiting for remembered positions or a public token scan.</div></div>
+    <div id="termFeed" class="termFeed"></div>
+  </div>
+</section>
+
+<section class="rememberStrip">
+  <div class="storyHead">
+    <div><div class="kicker">05 / what Canary remembers</div><h2 class="storyTitle">six fields become a state history.</h2></div>
+    <p class="storyLead">The same surfaces are normalized every sweep so the next change has a baseline.</p>
+  </div>
+  <div class="rememberGrid">
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>deployer</b><span>share, launch count and movement</span></div>
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>liquidity</b><span>curve reserve or pool liquidity</span></div>
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>price</b><span>pool price against previous state</span></div>
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>activity</b><span>trades, swaps and last activity</span></div>
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>fees</b><span>quote and token fee movement</span></div>
+    <div class="rememberItem"><div class="microMove"><i></i><i></i><i></i><i></i><i></i></div><b>phase</b><span>curve, swept, pool and rescued</span></div>
+  </div>
+</section>
 
 <section class="changed" id="changed">
   <div class="storyHead">
@@ -1101,12 +1545,25 @@ body.publicHost .watcherRail{display:none}
   </div>
 </section>
 
-<div class="footer"><b>Canary v0.4</b><span><span class="footerDomain">usecanary.watch</span> / Robinhood Chain / Pons V2 / read-only watchtower / created by <span id="footerCreator">@gippp69</span></span></div>
+<div class="megaFooter">
+    <div class="megaFooterInner">
+      <div class="footerLinks">
+        <span><b>CANARY v0.4</b> / Robinhood Chain watchtower</span>
+        <a href="#overview">scan</a>
+        <a href="#recorder">recorder</a>
+        <a href="#terminal">terminal</a>
+        <a href="https://github.com/Gipppp121/canary" target="_blank" rel="noreferrer">github</a>
+        <a href="https://x.com/gippp69" target="_blank" rel="noreferrer">X / @gippp69</a>
+      </div>
+      <div class="footerGhost">CANARY</div>
+      <div class="footerBottom"><span><b>usecanary.watch</b> / Robinhood Chain 4663 / Pons V2</span><span>NO SIGNER / NO PRIVATE KEY / NO TRANSACTION PATH</span></div>
+    </div>
+  </div>
 </main>
 
 <script>
 (function(){
-var state=null,selected=null,filter='ALL',pendingToken=null;
+var state=null,selected=null,filter='ALL',pendingToken=null,lastPublicScan=null,scanTimers=[];
 
 function esc(v){return String(v==null?'-':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function age(ms){if(!ms)return 'unknown';var d=Math.max(0,Date.now()-ms);if(d<1000)return 'now';if(d<60000)return Math.floor(d/1000)+'s';if(d<3600000)return Math.floor(d/60000)+'m';return Math.floor(d/3600000)+'h'}
@@ -1118,6 +1575,8 @@ function fmtNum(v){if(v==null||!isFinite(v))return '-';var n=Math.abs(v);if(n>=1
 function scanCell(label,value){return '<div class="scanCell"><b>'+esc(label)+'</b><span title="'+esc(value)+'">'+esc(value)+'</span></div>'}
 
 function renderPublicScan(p){
+  lastPublicScan=p;
+  renderShowcase();
   var market=p.phase==='POOL'?p.price:p.reserve;
   var html='<div class="scanResultHead"><div><div class="kicker">live on-chain snapshot</div><h3>'+esc(p.symbol)+'</h3><div class="addr">'+esc(p.token)+'</div></div><span class="scanTag">READ ONLY</span></div>'+
     '<div class="scanGrid">'+
@@ -1147,6 +1606,7 @@ async function runPublicScan(){
     return
   }
 
+  startScanSequence();
   btn.disabled=true;
   msg.className='scanMsg';
   msg.textContent='Reading Robinhood Chain...';
@@ -1156,17 +1616,20 @@ async function runPublicScan(){
     var data=await r.json();
 
     if(!r.ok||!data.ok){
+      endScanSequence(false);
       msg.className='scanMsg err';
       msg.textContent=data.error||'Could not read this token.';
       return
     }
 
     renderPublicScan(data.snapshot);
+    endScanSequence(true);
     msg.className='scanMsg ok';
     msg.textContent=data.cached?'Snapshot returned from the short safety cache.':'Live snapshot read from the chain.';
 
     try{history.replaceState(null,'','?token='+encodeURIComponent(token)+'#overview')}catch(e){}
   }catch(e){
+    endScanSequence(false);
     msg.className='scanMsg err';
     msg.textContent='Public scanner is temporarily unavailable.'
   }finally{
@@ -1183,7 +1646,7 @@ function initMotion(){
     },{passive:true})
   }
 
-  var nodes=document.querySelectorAll('.story,.panel,.card,.heroMetaCard');
+  var nodes=document.querySelectorAll('.story,.panel,.card,.heroMetaCard,.flightRecorder,.siteTerminal,.rememberStrip');
 
   if('IntersectionObserver' in window){
     var io=new IntersectionObserver(function(entries){
@@ -1254,6 +1717,139 @@ function renderPulse(){
   if(samples)samples.textContent=String(state.stats.samples);
   if(tracked)tracked.textContent=String(state.stats.tracked)
 }
+
+
+function scanStage(index,done){
+  var nodes=document.querySelectorAll('#scanStages .scanStage');
+  Array.prototype.forEach.call(nodes,function(n,i){
+    n.classList.toggle('done',done||i<index);
+    n.classList.toggle('active',!done&&i===index)
+  })
+}
+function startScanSequence(){
+  scanTimers.forEach(function(t){clearTimeout(t)});
+  scanTimers=[];
+  scanStage(0,false);
+  [1,2,3].forEach(function(i){
+    scanTimers.push(setTimeout(function(){scanStage(i,false)},i*260))
+  })
+}
+function endScanSequence(ok){
+  scanTimers.forEach(function(t){clearTimeout(t)});
+  scanTimers=[];
+  if(ok)scanStage(3,true);else scanStage(0,false)
+}
+function statusName(v){
+  var s=String(v||'INFO').toUpperCase();
+  if(s==='WARN')return 'WATCH';
+  if(s==='LEAVE'||s==='WATCH'||s==='QUIET')return s;
+  return 'INFO'
+}
+function marketText(p){
+  if(!p)return '-';
+  return p.phase==='POOL'?p.price:p.reserve
+}
+function renderShowcase(){
+  if(!state)return;
+
+  var live=state.rpc&&state.rpc.status==='ok';
+  var heroRpc=document.getElementById('heroRpc');
+  var heroBlock=document.getElementById('heroBlock');
+  var heroSamples=document.getElementById('heroSamples');
+  var heroTracked=document.getElementById('heroTracked');
+  if(heroRpc){heroRpc.textContent=live?'live':'offline';heroRpc.classList.toggle('live',live)}
+  if(heroBlock)heroBlock.textContent=state.rpc&&state.rpc.block?Number(state.rpc.block).toLocaleString():'-';
+  if(heroSamples)heroSamples.textContent=String(state.stats.samples||0);
+  if(heroTracked)heroTracked.textContent=String(state.stats.tracked||0);
+
+  var fRpc=document.getElementById('flightRpc');
+  var fBlock=document.getElementById('flightBlock');
+  var fSamples=document.getElementById('flightSamples');
+  var fWatchers=document.getElementById('flightWatchers');
+  var fStatus=document.getElementById('flightStatus');
+  if(fRpc)fRpc.textContent=live?'live':'offline';
+  if(fBlock)fBlock.textContent=state.rpc&&state.rpc.block?Number(state.rpc.block).toLocaleString():'-';
+  if(fSamples)fSamples.textContent=String(state.stats.samples||0);
+  if(fWatchers)fWatchers.textContent=String(state.stats.activeWatchers||0);
+  if(fStatus)fStatus.textContent=live?'recorder online / chain reachable':'rpc unavailable / waiting';
+
+  var events=[];
+  (state.watchers||[]).forEach(function(w){
+    (w.events||[]).slice(0,8).forEach(function(e){
+      events.push({
+        at:e.at,
+        status:statusName(e.status),
+        kind:'SWEEP #'+e.sweep,
+        reason:e.message||'watcher sweep',
+        delta:e.changes&&e.changes.length?e.changes.join(' / '):((e.durationMs||0)/1000).toFixed(1)+'s'
+      })
+    })
+  });
+  if(!events.length){
+    (state.alerts||[]).slice(0,8).forEach(function(a){
+      events.push({
+        at:a.at,
+        status:statusName(a.level),
+        kind:String(a.rule||'SIGNAL').toUpperCase(),
+        reason:a.headline||a.rule||'deterministic signal',
+        delta:(a.was||a.now)?String(a.was||'-')+' → '+String(a.now||'-'):'remembered'
+      })
+    })
+  }
+  events.sort(function(a,b){return (b.at||0)-(a.at||0)});
+
+  var rows=document.getElementById('flightRows');
+  if(rows){
+    if(events.length){
+      rows.innerHTML=events.slice(0,7).map(function(e){
+        return '<div class="flightRow '+esc(e.status)+'"><span class="flightTime">'+esc(clock(e.at))+'</span><span class="flightKind">'+esc(e.kind)+'</span><span class="flightReason">'+esc(e.reason)+'</span><span class="flightDelta">'+esc(e.delta)+'</span></div>'
+      }).join('')
+    }else{
+      rows.innerHTML=
+        '<div class="flightRow QUIET"><span class="flightTime">NOW</span><span class="flightKind">RPC EDGE</span><span class="flightReason">'+(live?'Robinhood Chain reachable':'waiting for RPC')+'</span><span class="flightDelta">'+(state.rpc&&state.rpc.block?'block '+state.rpc.block:'-')+'</span></div>'+
+        '<div class="flightRow INFO"><span class="flightTime">MEM</span><span class="flightKind">MEMORY</span><span class="flightReason">'+esc(state.stats.samples||0)+' remembered snapshots</span><span class="flightDelta">'+esc(state.stats.tracked||0)+' positions</span></div>'+
+        '<div class="flightRow INFO"><span class="flightTime">CTRL</span><span class="flightKind">BOUNDARY</span><span class="flightReason">observation only</span><span class="flightDelta">no signer / no tx path</span></div>'
+    }
+  }
+
+  var positions=(state.positions||[]).slice(0,3);
+  if(lastPublicScan){
+    var exists=positions.some(function(p){return String(p.token).toLowerCase()===String(lastPublicScan.token).toLowerCase()});
+    if(!exists)positions.unshift(lastPublicScan)
+  }
+  positions=positions.slice(0,3);
+
+  var deck=document.getElementById('termDeck');
+  if(deck){
+    if(!positions.length){
+      deck.innerHTML='<div class="termIdle">watchtower online.<br>scan a token above or let a watcher build persistent state.</div>'
+    }else{
+      deck.innerHTML=positions.map(function(p){
+        var persistent=(state.positions||[]).some(function(x){return String(x.token).toLowerCase()===String(p.token).toLowerCase()});
+        var s=persistent?statusName(p.status):'SNAPSHOT';
+        return '<div class="termCard">'+
+          '<div class="termCardHead"><b>'+esc(p.symbol||short(p.token))+'</b><span class="termState '+esc(s)+'">'+esc(s)+'</span></div>'+
+          '<div class="termKV"><span>phase</span><strong>'+esc(p.phase)+'</strong></div>'+
+          '<div class="termKV"><span>deployer</span><strong>'+Number(p.dev||0).toFixed(2)+'%</strong></div>'+
+          '<div class="termKV"><span>market</span><strong>'+esc(marketText(p))+'</strong></div>'+
+          '<div class="termKV"><span>activity</span><strong>'+esc(p.trades)+'</strong></div>'+
+        '</div>'
+      }).join('')
+    }
+  }
+
+  var feed=document.getElementById('termFeed');
+  if(feed){
+    var top=events.slice(0,4);
+    feed.innerHTML=top.length
+      ? top.map(function(e){return '<div class="termFeedLine"><span>'+esc(clock(e.at))+'</span><b>'+esc(e.kind)+'</b><span>'+esc(e.status)+'</span></div>'}).join('')
+      : '<div class="termFeedLine"><span>LIVE</span><b>RPC / chain 4663 / memory ready</b><span>READ ONLY</span></div>'
+  }
+
+  var meta=document.getElementById('termMeta');
+  if(meta)meta.textContent='Robinhood Chain 4663 / block '+(state.rpc&&state.rpc.block?state.rpc.block:'-')+' / read only'
+}
+
 
 function renderStats(){
   document.getElementById('tracked').textContent=state.stats.tracked;
@@ -1344,6 +1940,7 @@ function renderWatchers(){
 function render(){
   renderStats();
   renderPulse();
+  renderShowcase();
   renderWatchers();
   renderRows();
   renderDetail();
