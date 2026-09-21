@@ -630,7 +630,14 @@ const PAGE = String.raw`<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#080a07">
-<meta name="description" content="Canary is a read-only Pons V2 watchtower for Robinhood Chain. Scan a token and inspect live on-chain state without a signer.">
+<meta name="description" content="Canary is an open-source, read-only Pons V2 monitoring tool for Robinhood Chain. It reads public contract data and never requires an account, wallet connection, or payment.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://usecanary.watch/">
+<meta property="og:title" content="Canary v0.4 — Robinhood Chain watchtower">
+<meta property="og:description" content="Open-source, read-only monitoring of public Pons V2 contract state on Robinhood Chain.">
+<meta property="og:url" content="https://usecanary.watch/">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Canary","url":"https://usecanary.watch/","applicationCategory":"DeveloperApplication","operatingSystem":"Web","isAccessibleForFree":true,"description":"Open-source read-only monitoring of public Pons V2 contract data on Robinhood Chain.","sameAs":["https://github.com/Gipppp121/canary"]}</script>
 <title>Canary v0.4 - Robinhood Chain watchtower</title>
 <style>
 :root{
@@ -909,6 +916,7 @@ body.publicHost .watcherRail{display:none}
 
 
 /* CANARY_SITE_POLISH_V4 */
+/* CANARY_TRUST_HARDENING_V1 */
 :root{
   --canary:#f4d817;
   --canary2:#ffe94d;
@@ -957,6 +965,11 @@ body{
   font-size:12px
 }
 
+.trustStrip{
+  margin:0 0 12px;padding:10px 12px;border:1px solid #343328;border-radius:10px;
+  background:#090a07;color:#8f9789;font-size:9px;letter-spacing:.055em;text-align:center
+}
+.trustStrip span{color:#4e554a;margin:0 7px}
 .heroLive{
   display:grid;
   grid-template-columns:1.2fr repeat(4,.7fr);
@@ -1297,6 +1310,8 @@ body{
     <p>One snapshot tells you what exists now. Canary keeps the state before it, compares the next sweep against it, and leaves the reason beside every deterministic signal.</p>
   </div>
 
+  <div class="trustStrip">OPEN SOURCE <span>/</span> PUBLIC CONTRACT DATA ONLY <span>/</span> NO LOGIN <span>/</span> NO WALLET CONNECTION <span>/</span> NO PAYMENTS</div>
+
   <div class="heroLive">
     <div class="heroLiveIntro"><b>WATCHTOWER ONLINE</b>usecanary.watch / public scan + persistent local memory</div>
     <div class="heroLiveCell"><span>rpc</span><strong id="heroRpc" class="live">probing</strong></div>
@@ -1307,14 +1322,14 @@ body{
 
   <div class="scanHero">
     <div class="scanTop"><b>public chain scan</b><span>one token / one live read / zero execution</span></div>
-    <div class="scanForm"><input id="publicScanToken" autocomplete="off" spellcheck="false" placeholder="0x... paste a Pons V2 token address"><button id="publicScanBtn" class="scanBtn">SCAN TOKEN</button></div>
+    <div class="scanForm"><input id="publicScanToken" autocomplete="off" spellcheck="false" placeholder="0x... public Pons V2 contract address"><button id="publicScanBtn" class="scanBtn">SCAN TOKEN</button></div>
     <div class="scanSequence" id="scanStages">
       <div class="scanStage active">01 / validate launch</div>
       <div class="scanStage">02 / read state</div>
       <div class="scanStage">03 / normalize</div>
       <div class="scanStage">04 / snapshot</div>
     </div>
-    <div id="publicScanMsg" class="scanMsg">A current snapshot is not a change verdict. Persistent signals need memory.</div>
+    <div id="publicScanMsg" class="scanMsg">Public contract address only. No account, wallet connection, or payment is required.</div>
     <div id="publicScanResult" class="scanResult"></div>
   </div>
 
@@ -1328,8 +1343,8 @@ body{
 
 
 <div class="ticker"><div class="tickerTrack">
-  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>NO SIGNER</b> / NO PRIVATE KEY</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
-  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>NO SIGNER</b> / NO PRIVATE KEY</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
+  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>READ ONLY</b> / NO WALLET CONNECTION</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
+  <span><b>CHAIN 4663</b> / ROBINHOOD CHAIN</span><span>PONS V2 / LIVE STATE</span><span><b>READ ONLY</b> / NO WALLET CONNECTION</span><span>PERSISTENT MEMORY / BEFORE -> AFTER</span><span>POOL LIQUIDITY / PRICE / SWAPS / FEES</span>
 </div></div>
 
 
@@ -1344,7 +1359,7 @@ body{
       <div class="filmStage">
         <div class="filmNarrative">
           <div id="filmBeat" class="filmBeat">read the chain.<br><em>save the state.</em></div>
-          <div id="filmSub" class="filmSub">Canary starts with one current snapshot. No signer, no wallet prompt, no transaction path.</div>
+          <div id="filmSub" class="filmSub">Canary starts with one current snapshot. No wallet connection and no transaction execution.</div>
         </div>
         <div class="filmTerminal" id="filmTerminal">
           <div class="filmLine on"><b>00:00</b><strong>RPC / chain 4663 / block acquired</strong></div>
@@ -1386,7 +1401,7 @@ body{
     <section class="panel">
       <h2>positions remembered by Canary</h2>
       <div class="watchbar"><input id="watchToken" autocomplete="off" spellcheck="false" placeholder="paste a Pons V2 token address"><button id="watchBtn" class="watchbtn">WATCH TOKEN</button><button id="controlBtn" class="tab adminControl" type="button">CONTROL KEY</button></div>
-      <div id="watchMsg" class="watchmsg">Starts a local read-only watcher. No signer. No transaction path.</div>
+      <div id="watchMsg" class="watchmsg">Starts a local read-only watcher. No wallet connection. No transaction execution.</div>
       <div id="watcherRail" class="watcherRail"></div>
       <div class="tools"><input id="search" placeholder="search symbol / token / deployer"><div class="tabs"><button class="tab on" data-filter="ALL">all</button><button class="tab" data-filter="WATCH">watch</button><button class="tab" data-filter="LEAVE">leave</button></div></div>
       <div class="scroll"><table><thead><tr><th>token</th><th>phase</th><th>dev</th><th>market state</th><th>status</th><th>seen</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty" hidden>Nothing is remembered yet.<br>Paste a Pons V2 token above and start a watcher.</div></div>
@@ -1525,20 +1540,20 @@ body{
 
 <section class="story">
   <div class="storyHead"><div><div class="kicker">07 / trust boundary</div><h2 class="storyTitle">useful because it cannot spend</h2></div><p class="storyLead">The read-only boundary is part of the product. Canary observes and explains state while execution remains somewhere else.</p></div>
-  <div class="safety"><div class="safetyBig"><h3>no transaction path.</h3><p>No wallet client, no imported account, no private key flow and no automatic exit hiding behind the dashboard. WATCH TOKEN only starts another read-only process.</p></div><div class="safetyList"><div class="safetyItem"><b>NO SIGNER</b><span>public client reads only</span></div><div class="safetyItem"><b>NO KEY</b><span>signing material is refused</span></div><div class="safetyItem"><b>NO BUY BUTTON</b><span>signals are context, not orders</span></div><div class="safetyItem"><b>PLAIN RULES</b><span>thresholds live in source</span></div></div></div>
+  <div class="safety"><div class="safetyBig"><h3>no transaction path.</h3><p>The public site never connects an account and exposes no transaction execution. WATCH TOKEN only starts another read-only monitoring process.</p></div><div class="safetyList"><div class="safetyItem"><b>READ ONLY</b><span>public contract data only</span></div><div class="safetyItem"><b>NO ACCOUNT</b><span>no credentials are collected</span></div><div class="safetyItem"><b>NO TRADING UI</b><span>signals are context, not orders</span></div><div class="safetyItem"><b>PLAIN RULES</b><span>thresholds live in source</span></div></div></div>
 </section>
 
 
 <section class="story" id="refusals">
   <div class="storyHead">
     <div><div class="kicker">08 / refusals</div><h2 class="storyTitle">what Canary refuses to become.</h2></div>
-    <p class="storyLead">The boundary is visible on purpose. If a feature needs a signer, a private key, or a guessed number, it does not belong in this watchtower.</p>
+    <p class="storyLead">The boundary is visible on purpose. If a feature needs account access, transaction execution, or a guessed number, it does not belong in this watchtower.</p>
   </div>
   <div class="refusals">
     <div class="refusalLead">useful because some paths simply do not exist.</div>
     <div class="refusalList">
-      <div class="refusalRow"><code>sign transaction</code><span>refused — Canary has no signer and no execution path.</span></div>
-      <div class="refusalRow"><code>import private key</code><span>refused — there is nowhere in the product to store signing material.</span></div>
+      <div class="refusalRow"><code>execute transaction</code><span>refused — Canary is an observation-only service.</span></div>
+      <div class="refusalRow"><code>connect account</code><span>refused — the public site does not collect credentials or connect wallets.</span></div>
       <div class="refusalRow"><code>invent a signal</code><span>refused — a WATCH or LEAVE state must map to a configured deterministic rule.</span></div>
       <div class="refusalRow"><code>judge one snapshot</code><span>refused — change signals need a remembered previous state, not a story around one number.</span></div>
     </div>
@@ -1556,7 +1571,7 @@ body{
         <a href="https://x.com/gippp69" target="_blank" rel="noreferrer">X / @gippp69</a>
       </div>
       <div class="footerGhost">CANARY</div>
-      <div class="footerBottom"><span><b>usecanary.watch</b> / Robinhood Chain 4663 / Pons V2</span><span>NO SIGNER / NO PRIVATE KEY / NO TRANSACTION PATH</span></div>
+      <div class="footerBottom"><span><b>usecanary.watch</b> / Robinhood Chain 4663 / Pons V2</span><span>READ ONLY / NO WALLET CONNECTION / NO TRANSACTION EXECUTION</span></div>
     </div>
   </div>
 </main>
@@ -1681,7 +1696,7 @@ function filmFrame(){
   var lines=document.querySelectorAll('#filmTerminal .filmLine');
   Array.prototype.forEach.call(lines,function(line,i){line.classList.toggle('on',i<=stage)});
   var beats=[
-    ['read the chain.<br><em>save the state.</em>','Canary starts with one current snapshot. No signer, no wallet prompt, no transaction path.'],
+    ['read the chain.<br><em>save the state.</em>','Canary starts with one current snapshot. No wallet connection and no transaction execution.'],
     ['same fields.<br><em>next sweep.</em>','The next read is normalized into the same shape so the comparison is mechanical, not interpretive.'],
     ['memory loads.<br><em>before meets after.</em>','The previous state becomes the baseline. Nothing useful is lost when the browser refreshes.'],
     ['a threshold moves.<br><em>the reason stays.</em>','A configured condition crosses its line. The signal carries the exact before and after values.'],
@@ -2038,6 +2053,30 @@ void probeRpc();
 const server = createServer(async (req, res) => {
   const path = (req.url ?? "/").split("?")[0] ?? "/";
 
+  if (req.method === "GET" && path === "/robots.txt") {
+    return text(res, 200, "User-agent: *\nAllow: /\nSitemap: https://usecanary.watch/sitemap.xml\n");
+  }
+
+  if (req.method === "GET" && path === "/sitemap.xml") {
+    res.writeHead(200, {
+      "content-type": "application/xml; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    });
+    return void res.end('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://usecanary.watch/</loc></url></urlset>');
+  }
+
+  if (req.method === "GET" && path === "/.well-known/security.txt") {
+    res.writeHead(200, {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "public, max-age=3600",
+    });
+    return void res.end(
+      "Contact: https://github.com/Gipppp121/canary/issues\n" +
+      "Canonical: https://usecanary.watch/.well-known/security.txt\n" +
+      "Expires: 2027-09-21T00:00:00.000Z\n"
+    );
+  }
+
   if (req.method === "GET" && path === "/api/state") return json(res, 200, apiState());
 
 
@@ -2105,7 +2144,16 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && (path === "/" || path === "/index.html")) {
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    res.writeHead(200, {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+      "strict-transport-security": "max-age=31536000",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "no-referrer",
+      "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+      "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+    });
     return void res.end(PAGE);
   }
 
