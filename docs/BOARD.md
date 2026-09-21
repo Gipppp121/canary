@@ -32,7 +32,7 @@ npm run canary -- watch --token 0xTOKEN --board --interval 10
 
 While a token is still on the Pons V2 bonding curve, the board can show:
 
-- `reserve` — `realQuoteReserve()` in the pair asset
+- `reserve`: `realQuoteReserve()` in the pair asset
 - pending curve fees
 - recent `CurveBuy` / `CurveSell` count
 - last observed curve trade

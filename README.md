@@ -49,7 +49,10 @@ Every sweep is normalized into a snapshot. The next sweep is compared against th
 
 The public site is the easiest way to inspect Canary without installing anything. Paste a Pons V2 token address into the scanner and Canary performs a read-only chain snapshot.
 
-The public surface also shows live RPC / chain state and explains how Canary remembers changes between sweeps.
+The public surface also shows live RPC / chain state and explains how Canary remembers changes between sweeps:
+
+- **Flight Recorder**: every sweep leaves a receipt, with what changed, which rule noticed it, and the previous state beside it
+- **Sentinel Grid**: remembered positions and fresh scans on one terminal-style screen
 
 Persistent watcher control stays protected. The public site does not expose a signer, wallet import, private-key field, or transaction path.
 
@@ -81,8 +84,6 @@ Inside the desk you can inspect:
 - live history charts
 - before → after signal deltas
 - per-sweep event history
-
-The current board screenshot will be refreshed separately as the public UI evolves.
 
 ---
 
@@ -264,7 +265,7 @@ WALLET_PRIVATE_KEY
 
 The project also checks source code for common transaction-writing / signing primitives.
 
-The intended failure mode is boring: if Canary cannot read something, it should report an error or unknown state — never move funds.
+The intended failure mode is boring: if Canary cannot read something, it should report an error or an unknown state. It should never move funds.
 
 ---
 
@@ -291,17 +292,19 @@ npm run build
 npm run canary -- watch --demo
 ```
 
-CI builds the package, runs the deterministic test suite, smoke-tests the compiled CLI, and checks that signing / write primitives do not appear in `src/`.
+46 tests, offline fixtures only. No wallet, no RPC, no network.
+
+CI runs the same suite on Node 20 and 22, builds the package, smoke-tests the compiled CLI, and fails if signing / write primitives appear in `src/`.
 
 ---
 
 ## Docs
 
-- [`docs/BOARD.md`](docs/BOARD.md) — board fields and behavior
-- [`docs/RULES.md`](docs/RULES.md) — deterministic signals
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — reader / memory / rule architecture
-- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) — explicit limits
-- [`docs/V04.md`](docs/V04.md) — v0.4 changes
+- [`docs/BOARD.md`](docs/BOARD.md): board fields and behavior
+- [`docs/RULES.md`](docs/RULES.md): every deterministic signal, with its exact condition and default
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): reader, memory and rule architecture
+- [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md): explicit limits
+- [`docs/V04.md`](docs/V04.md): v0.4 changes
 
 ---
 

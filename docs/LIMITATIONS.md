@@ -6,9 +6,11 @@ Canary is intentionally narrower than a trading terminal.
 
 Standard JSON-RPC cannot enumerate all ERC-20 balances for a wallet. Canary checks a bounded set of recent Pons V2 launches plus explicit token pins. If a position predates the window, use `TOKENS=` or `--token`.
 
-## Post-graduation market activity is not indexed yet
+## Pool activity is a bounded window, not lifetime volume
 
-Pons V2 moves graduated launches to Uniswap v4. Canary tracks the phase change and token/deployer state, but v0.2 does not reconstruct the pool id and v4 swap stream. Curve-specific reserve, volume and fee rules therefore stop after phase 0.
+Since v0.4, Canary reconstructs the Pons Uniswap v4 pool id for graduated launches and reads price, active liquidity, hook fees and recent swaps directly. Swap history only covers the last `TRADE_LOOKBACK_BLOCKS` blocks (default `20000`). Canary does not claim lifetime v4 volume.
+
+Curve-specific reserve, volume and fee rules still stop after phase 0, and pool rules only run while both snapshots are in phase 2. A comparison is never made across the graduation boundary.
 
 ## Public RPCs can refuse historical logs
 

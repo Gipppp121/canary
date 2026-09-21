@@ -1,6 +1,6 @@
 # Rules
 
-Every rule is a pure function over snapshots. There is no LLM, classifier or hidden score in the alert path.
+Canary v0.4 has ten rules: six for the bonding curve or any phase, four for graduated pools. Every rule is a pure function over snapshots. There is no LLM, classifier or hidden score in the alert path.
 
 ## deployer-balance-drop · LEAVE
 
@@ -18,6 +18,14 @@ Fires when `realQuoteReserve()` falls by more than `LIQUIDITY_DROP_PCT` between 
 
 Default: `15%`.
 
+## pool-liquidity-drop · LEAVE
+
+Only active while both snapshots are Pons V2 phase `2` (graduated Uniswap v4 pool).
+
+Fires when active v4 pool liquidity falls by more than `POOL_LIQUIDITY_DROP_PCT` between sweeps. This is raw active liquidity, not TVL and not a quote reserve, so it is never compared against the curve reserve from before graduation.
+
+Default: `20%`.
+
 ## fees-swept · WATCH
 
 Only active on the curve.
@@ -25,6 +33,30 @@ Only active on the curve.
 Fires when `quoteFeeBalance() + creatorTaxBalance()` decreases. This means pending quote-denominated fees left the curve balance. It does **not** prove the creator claimed them from the fee escrow.
 
 No threshold.
+
+## pool-token-fees-moved · WATCH
+
+Only active while both snapshots are in phase `2`.
+
+Fires when pending launch-token fees on the Pons hook decrease. Like `fees-swept`, it reports that a balance moved. It does not claim who moved it or why.
+
+No threshold.
+
+## pool-price-move · WATCH
+
+Only active while both snapshots are in phase `2`.
+
+Fires when the quote-per-token pool price moves by `POOL_PRICE_MOVE_PCT` or more in either direction between sweeps. It is volatility context, not a direction call and not a trade instruction.
+
+Default: `25%`.
+
+## pool-swap-burst · WATCH
+
+Only active while both snapshots are in phase `2`.
+
+Fires when the number of pool swaps inside Canary's recent lookback window grows by `POOL_SWAP_BURST_COUNT` or more between sweeps.
+
+Default: `20` additional swaps.
 
 ## volume-dead · WATCH
 
