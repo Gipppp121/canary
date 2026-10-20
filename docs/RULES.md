@@ -62,7 +62,7 @@ Default: `20` additional swaps.
 
 Only active on the curve.
 
-Fires when the newest successfully indexed `CurveBuy` or `CurveSell` is older than `VOLUME_DEAD_MINUTES`.
+Fires when the newest successfully indexed `CurveBuy` or `CurveSell` is older than `VOLUME_DEAD_MINUTES`. It also fires when the log query succeeds and the whole `TRADE_LOOKBACK_BLOCKS` window holds no trade, and that window is longer than `VOLUME_DEAD_MINUTES`. The headline then gives the window length as a lower bound ("at least N minutes").
 
 If the RPC refuses the log query, Canary records last-trade time as unknown and the rule stays quiet. Missing data is not evidence of dead volume.
 
