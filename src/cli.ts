@@ -100,7 +100,7 @@ function printSnapshot(s: Snapshot): void {
   if (s.phase === 0 || s.phase === undefined) {
     console.log(`curve reserve ${units(s.liquidityWei, s.pairDecimals ?? 18)} ${s.pairSymbol ?? "quote"}`);
     console.log(`recent trades ${s.trades}`);
-    console.log(`last trade    ${s.lastTradeAt ? `${ago(Date.now() - s.lastTradeAt)} ago` : "unknown / RPC did not return logs"}`);
+    console.log(`last trade    ${s.lastTradeAt ? `${ago(Date.now() - s.lastTradeAt)} ago` : s.quietSince ? `none in the last ${ago(Date.now() - s.quietSince)}` : "unknown / RPC did not return logs"}`);
     console.log(`pending fees  ${s.feesPendingWei.toString()} raw quote units`);
   } else if (s.phase === 2) {
     console.log(`pool id       ${s.poolId ?? "unknown"}`);

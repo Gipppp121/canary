@@ -109,3 +109,14 @@ test("the first sweep of a new token cannot compare, and says nothing about chan
   const out = evaluate(undefined, snap(), DEFAULT_THRESHOLDS, now);
   assert.ok(out.every((a) => a.rule !== "deployer-balance-drop"));
 });
+
+test("a curve with no trade in a fully read window older than the threshold is dead volume", () => {
+  const a = volumeDead(snap({ phase: 0, trades: 0, lastTradeAt: 0, quietSince: now - 40 * 60_000 }), DEFAULT_THRESHOLDS, now);
+  assert.ok(a);
+  assert.equal(a!.rule, "volume-dead");
+  assert.match(a!.headline, /no curve trade for at least 40 minutes/);
+});
+
+test("an empty read window shorter than the threshold stays quiet", () => {
+  assert.equal(volumeDead(snap({ phase: 0, trades: 0, lastTradeAt: 0, quietSince: now - 10 * 60_000 }), DEFAULT_THRESHOLDS, now), null);
+});

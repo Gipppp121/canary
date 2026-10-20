@@ -307,7 +307,7 @@ export class PonsV2Reader implements Reader {
     return balances.filter((v): v is Position => v !== null);
   }
 
-  private async recentTrades(curve: Address, launchBlock: bigint): Promise<{ count: number; lastTradeAt: number }> {
+  private async recentTrades(curve: Address, launchBlock: bigint): Promise<{ count: number; lastTradeAt: number; quietSince?: number }> {
     const latest = await this.client.getBlockNumber();
     const floor = latest > this.tradeLookbackBlocks ? latest - this.tradeLookbackBlocks : 0n;
     const from = launchBlock > floor ? launchBlock : floor;
@@ -318,7 +318,11 @@ export class PonsV2Reader implements Reader {
         fromBlock: from,
         toBlock: latest,
       });
-      if (!logs.length) return { count: 0, lastTradeAt: 0 };
+      if (!logs.length) {
+        // A successful empty read is not unknown: no trade since the window began.
+        const start = await this.client.getBlock({ blockNumber: from });
+        return { count: 0, lastTradeAt: 0, quietSince: Number(start.timestamp) * 1000 };
+      }
       const last = logs[logs.length - 1]!;
       if (last.blockNumber === null) return { count: logs.length, lastTradeAt: 0 };
       const block = await this.client.getBlock({ blockNumber: last.blockNumber });
@@ -388,7 +392,7 @@ export class PonsV2Reader implements Reader {
       feesPending = q + tax;
     }
 
-    let trades = launch.phase === 0
+    let trades: { count: number; lastTradeAt: number; quietSince?: number } = launch.phase === 0
       ? await this.recentTrades(launch.curve, indexed.launchBlock)
       : { count: 0, lastTradeAt: 0 };
 
@@ -449,6 +453,7 @@ export class PonsV2Reader implements Reader {
       liquidityWei: reserve,
       trades: trades.count,
       lastTradeAt: trades.lastTradeAt,
+      ...(trades.quietSince ? { quietSince: trades.quietSince } : {}),
       feesPendingWei: feesPending,
       deployerLaunches,
       phase: Number(launch.phase),

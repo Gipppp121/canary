@@ -18,6 +18,12 @@ export interface Snapshot {
   trades: number;
   /** Unix milliseconds of the latest known trade. 0 means unknown. */
   lastTradeAt: number;
+  /**
+   * Unix milliseconds of the first block of a trade window that was read
+   * successfully and held no trade: no trade happened since at least then.
+   * Absent when a trade was found or the read failed.
+   */
+  quietSince?: number;
   /** Pending quote-denominated fees. */
   feesPendingWei: bigint;
   /** Recent launches by the same deployer in the indexed factory window. */
@@ -208,8 +214,10 @@ export function poolSwapBurst(a: Snapshot, b: Snapshot, t: Thresholds): Alert | 
 /** Unknown trade history stays quiet instead of inventing a timestamp. */
 export function volumeDead(b: Snapshot, t: Thresholds, now: number = Date.now()): Alert | null {
   if (b.phase !== undefined && b.phase !== 0) return null;
-  if (!b.lastTradeAt || b.lastTradeAt <= 0) return null;
-  const deadFor = now - b.lastTradeAt;
+  const known = b.lastTradeAt > 0;
+  const since = known ? b.lastTradeAt : (b.quietSince ?? 0);
+  if (!since || since <= 0) return null;
+  const deadFor = now - since;
   if (deadFor < t.volumeDeadMinutes * 60_000) return null;
   const minutes = Math.floor(deadFor / 60_000);
   return {
@@ -217,8 +225,10 @@ export function volumeDead(b: Snapshot, t: Thresholds, now: number = Date.now())
     level: "warn",
     token: b.token,
     symbol: b.symbol,
-    headline: `${b.symbol}: no curve trade for ${minutes} minutes`,
-    detail: `latest indexed CurveBuy/CurveSell is older than the ${t.volumeDeadMinutes}m threshold`,
+    headline: `${b.symbol}: no curve trade for ${known ? "" : "at least "}${minutes} minutes`,
+    detail: known
+      ? `latest indexed CurveBuy/CurveSell is older than the ${t.volumeDeadMinutes}m threshold`
+      : `no CurveBuy/CurveSell in the ${minutes}m lookback window, longer than the ${t.volumeDeadMinutes}m threshold`,
   };
 }
 
