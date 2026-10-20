@@ -16,6 +16,8 @@ Curve-specific reserve, volume and fee rules still stop after phase 0, and pool 
 
 A failed trade-log read becomes `unknown`, not `zero`. That is why `volume-dead` cannot fire when the last-trade timestamp is unknown.
 
+A failed curve reserve or curve fee read skips the token for that sweep, or moves on to an `RPC_FALLBACK_URLS` endpoint, instead of recording `0`. A failed Pons hook fee read leaves the pool token fees unknown. Neither is compared against the previous sweep.
+
 ## Signals do not infer intent
 
 A deployer balance drop may be a sell, transfer or burn. A curve reserve drop describes quote reserve leaving the curve; it is not proof of a rug. A fee sweep is not the same thing as a creator claim.
