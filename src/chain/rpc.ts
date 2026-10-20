@@ -377,14 +377,15 @@ export class PonsV2Reader implements Reader {
     let poolPriceQuotePerToken: number | undefined;
     let poolPendingTokenFeesWei: bigint | undefined;
     if (launch.phase === 0) {
-      const vals = await Promise.allSettled([
+      // A failed read must not become 0: the rules would report the reserve or the
+      // fees as gone. Let the snapshot fail so the sweep skips the token (or the
+      // fallback reader retries it on the next RPC).
+      const [r, q, tax] = await Promise.all([
         this.client.readContract({ address: launch.curve, abi: curveAbi, functionName: "realQuoteReserve" }),
         this.client.readContract({ address: launch.curve, abi: curveAbi, functionName: "quoteFeeBalance" }),
         this.client.readContract({ address: launch.curve, abi: curveAbi, functionName: "creatorTaxBalance" }),
       ]);
-      reserve = vals[0].status === "fulfilled" ? vals[0].value : 0n;
-      const q = vals[1].status === "fulfilled" ? vals[1].value : 0n;
-      const tax = vals[2].status === "fulfilled" ? vals[2].value : 0n;
+      reserve = r;
       feesPending = q + tax;
     }
 
@@ -425,10 +426,11 @@ export class PonsV2Reader implements Reader {
       if (poolReads[1].status === "fulfilled") poolLiquidity = poolReads[1].value;
       const pendingQuoteFee = poolReads[2].status === "fulfilled" ? poolReads[2].value : 0n;
       const pendingQuoteTax = poolReads[3].status === "fulfilled" ? poolReads[3].value : 0n;
-      const pendingTokenFee = poolReads[4].status === "fulfilled" ? poolReads[4].value : 0n;
-      const pendingTokenTax = poolReads[5].status === "fulfilled" ? poolReads[5].value : 0n;
       feesPending = pendingQuoteFee + pendingQuoteTax;
-      poolPendingTokenFeesWei = pendingTokenFee + pendingTokenTax;
+      // Unknown, not 0, when either hook read failed; pool-token-fees-moved skips unknown.
+      if (poolReads[4].status === "fulfilled" && poolReads[5].status === "fulfilled") {
+        poolPendingTokenFeesWei = poolReads[4].value + poolReads[5].value;
+      }
       trades = await this.recentPoolTrades(poolId);
     }
 
